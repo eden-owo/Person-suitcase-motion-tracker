@@ -1,4 +1,4 @@
-# YOLOv8&11-Instance-Segmentation-ONNXRuntime-Python Demo
+# YOLOv8&v11-Instance-Segmentation-ONNXRuntime-Python Demo
 
 This repository provides a [Python](https://www.python.org/) demo for performing instance segmentation with [Ultralytics YOLOv8](https://docs.ultralytics.com/models/yolov8/) using [ONNX Runtime](https://onnxruntime.ai/). It highlights the interoperability of YOLOv8 and yolov11 models, allowing inference without requiring the full [PyTorch](https://pytorch.org/) stack. This approach is ideal for deployment scenarios where minimal dependencies are preferred. Learn more about the [segmentation task](https://docs.ultralytics.com/tasks/segment/) on our documentation.
 
