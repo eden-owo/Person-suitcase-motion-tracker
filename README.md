@@ -47,6 +47,10 @@ python main.py --model yolo11n-seg.onnx --source path/to/image.jpg
 
 After running the command, the script will process the image, perform segmentation, and display the results with bounding boxes and masks overlaid.
 
+
+<img src="https://github.com/eden-owo/YOLOv8-Segmentation/blob/master/pics/suitcase_output.png" alt="YOLOv11 Segmentation ONNX Demo Output" width="800">
+
+
 <img src="https://user-images.githubusercontent.com/51357717/279988626-eb74823f-1563-4d58-a8e4-0494025b7c9a.jpg" alt="YOLOv8 Segmentation ONNX Demo Output" width="800">
 
 ## 💡 Advanced Usage
