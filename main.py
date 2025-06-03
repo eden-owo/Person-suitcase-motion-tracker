@@ -7,6 +7,7 @@ import cv2
 import numpy as np
 import onnxruntime as ort
 import torch
+import torch.nn.functional as F
 
 import ultralytics.utils.ops as ops
 from ultralytics.engine.results import Results
@@ -141,8 +142,17 @@ class YOLOv8Seg:
         preds, protos = [torch.from_numpy(p) for p in outs]
         preds = ops.non_max_suppression(preds, self.conf, self.iou, nc=len(self.classes))
 
+        suitcase_idx = None
+        for k, v in self.classes.items():
+            if v == 'suitcase':
+                suitcase_idx = int(k)
+                break
         results = []
         for i, pred in enumerate(preds):
+            if pred is None or pred.shape[0] == 0:
+                results.append(Results(img, path="", names=self.classes, boxes=torch.empty((0, 6)), masks=None))
+                continue
+
             pred[:, :4] = ops.scale_boxes(prep_img.shape[2:], pred[:, :4], img.shape)
             masks = self.process_mask(protos[i], pred[:, 6:], pred[:, :4], img.shape[:2])
             results.append(Results(img, path="", names=self.classes, boxes=pred[:, :6], masks=masks))
@@ -181,9 +191,26 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
-    img = cv2.imread(args.source)
-    results = model(img)
 
-    cv2.imshow("Segmented Image", results[0].plot())
+    video = cv2.VideoCapture('/home/eden/ultralytics/examples/YOLOv8-Segmentation-ONNXRuntime-Python/pics/IMG_2894.mov')
+    while True:
+        ret, frame = video.read()            
+        if not ret:
+            break
+        results = model(frame)
+
+        masks = getattr(results[0], 'masks', None)
+        if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
+            output = results[0].plot()
+        else:
+            output = frame.copy()
+        output = cv2.resize(output, (480, 360))
+        output = cv2.rotate(output, cv2.ROTATE_90_CLOCKWISE)                        
+
+        cv2.imshow("Segmented Image", output)
+        cv2.waitKey(1)
+    
     cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.destroyAllWindows() 
+
+
