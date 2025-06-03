@@ -4,6 +4,7 @@ import argparse
 from typing import List, Tuple, Union
 
 import cv2
+import time
 import numpy as np
 import onnxruntime as ort
 import torch
@@ -65,6 +66,8 @@ class YOLOv8Seg:
         self.classes = YAML.load(check_yaml("coco8.yaml"))["names"]
         self.conf = conf
         self.iou = iou
+        print("torch.cuda.is_available() = ", torch.cuda.is_available())
+        print("Using providers:", self.session.get_providers())
 
     def __call__(self, img: np.ndarray) -> List[Results]:
         """
@@ -197,6 +200,11 @@ if __name__ == "__main__":
         ret, frame = video.read()            
         if not ret:
             break
+        
+        start_time = time.time()
+
+        # Resize to 480x360
+        frame = cv2.resize(frame, (640, 480))
         results = model(frame)
 
         masks = getattr(results[0], 'masks', None)
@@ -204,9 +212,13 @@ if __name__ == "__main__":
             output = results[0].plot()
         else:
             output = frame.copy()
-        output = cv2.resize(output, (480, 360))
+
         output = cv2.rotate(output, cv2.ROTATE_90_CLOCKWISE)                        
 
+        end_time = time.time()
+        FPS = 1/(end_time - start_time)
+        # print(f"Frame latency: {latency_ms:.2f} ms")
+        print(f"FPS: {FPS:.2f}")
         cv2.imshow("Segmented Image", output)
         cv2.waitKey(1)
     
