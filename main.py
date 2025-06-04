@@ -209,7 +209,7 @@ if __name__ == "__main__":
         ret, frame = video.read()            
         if not ret:
             break
-        
+
         start_time = time.time()
 
         # Resize to 480x360
