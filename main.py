@@ -3,7 +3,16 @@
 import argparse
 from typing import List, Tuple, Union
 
+import sys
+sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
+
 import cv2
+print("cv2 loaded from:", cv2.__file__)
+print("OpenCV version:", cv2.__version__)
+# print("Build Info:")
+# print(cv2.getBuildInformation())
+print("CUDA-enabled device count:", cv2.cuda.getCudaEnabledDeviceCount())
+
 import time
 import numpy as np
 import onnxruntime as ort
@@ -204,7 +213,18 @@ if __name__ == "__main__":
         start_time = time.time()
 
         # Resize to 480x360
-        frame = cv2.resize(frame, (640, 480))
+        # frame = cv2.resize(frame, (640, 480))
+        # Upload to GPU
+        gpu_frame = cv2.cuda_GpuMat()
+        gpu_frame.upload(frame)
+
+        # Resize to 640x480 on GPU
+        gpu_resized = cv2.cuda.resize(gpu_frame, (640, 480))
+
+        # Download back to CPU
+        frame_resized = gpu_resized.download()
+
+        results = model(frame_resized)
         results = model(frame)
 
         masks = getattr(results[0], 'masks', None)
