@@ -205,6 +205,7 @@ if __name__ == "__main__":
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
     video = cv2.VideoCapture('/home/eden/ultralytics/examples/YOLOv8-Segmentation-ONNXRuntime-Python/pics/IMG_2894.mov')
+    gpu_frame = cv2.cuda_GpuMat()
     while True:
         ret, frame = video.read()            
         if not ret:
@@ -212,10 +213,7 @@ if __name__ == "__main__":
 
         start_time = time.time()
 
-        # Resize to 480x360
-        # frame = cv2.resize(frame, (640, 480))
-        # Upload to GPU
-        gpu_frame = cv2.cuda_GpuMat()
+        # Upload to GPU        
         gpu_frame.upload(frame)
 
         # Resize to 640x480 on GPU
@@ -230,7 +228,7 @@ if __name__ == "__main__":
         if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
             output = results[0].plot()
         else:
-            output = frame.copy()                
+            output = frame_resized.copy()                
 
         end_time = time.time()
         FPS = 1/(end_time - start_time)
