@@ -225,15 +225,12 @@ if __name__ == "__main__":
         frame_resized = gpu_resized.download()
 
         results = model(frame_resized)
-        results = model(frame)
 
         masks = getattr(results[0], 'masks', None)
         if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
             output = results[0].plot()
         else:
-            output = frame.copy()
-
-        output = cv2.rotate(output, cv2.ROTATE_90_CLOCKWISE)                        
+            output = frame.copy()                
 
         end_time = time.time()
         FPS = 1/(end_time - start_time)
