@@ -152,7 +152,8 @@ class YOLOv8Seg:
             (List[Results]): Processed detection results containing bounding boxes and segmentation masks.
         """
         preds, protos = [torch.from_numpy(p) for p in outs]
-        preds = ops.non_max_suppression(preds, self.conf, self.iou, nc=len(self.classes))
+        allowed_ids = [0, 28]
+        preds = ops.non_max_suppression(preds, self.conf, self.iou, nc=len(self.classes), classes=allowed_ids)
 
         suitcase_idx = None
         for k, v in self.classes.items():
@@ -217,7 +218,7 @@ if __name__ == "__main__":
         gpu_frame.upload(frame)
 
         # Resize to 640x480 on GPU
-        gpu_resized = cv2.cuda.resize(gpu_frame, (640, 480))
+        gpu_resized = cv2.cuda.resize(gpu_frame, (480, 640))
 
         # Download back to CPU
         frame_resized = gpu_resized.download()
