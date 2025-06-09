@@ -155,11 +155,6 @@ class YOLOv8Seg:
         allowed_ids = [0, 28]
         preds = ops.non_max_suppression(preds, self.conf, self.iou, nc=len(self.classes), classes=allowed_ids)
 
-        suitcase_idx = None
-        for k, v in self.classes.items():
-            if v == 'suitcase':
-                suitcase_idx = int(k)
-                break
         results = []
         for i, pred in enumerate(preds):
             if pred is None or pred.shape[0] == 0:
@@ -167,6 +162,7 @@ class YOLOv8Seg:
                 continue
 
             pred[:, :4] = ops.scale_boxes(prep_img.shape[2:], pred[:, :4], img.shape)
+            masks = self.process_mask(protos[i], pred[:, 6:], pred[:, :4], img.shape[:2])
             masks = self.process_mask(protos[i], pred[:, 6:], pred[:, :4], img.shape[:2])
             results.append(Results(img, path="", names=self.classes, boxes=pred[:, :6], masks=masks))
 
@@ -205,8 +201,25 @@ if __name__ == "__main__":
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('./pics/IMG_2894.mov')
+    video = cv2.VideoCapture('./pics/suitcase2.mp4')
     gpu_frame = cv2.cuda_GpuMat()
+
+    # 取得影片參數
+    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
+    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    fps = video.get(cv2.CAP_PROP_FPS)
+
+    # 輸出影片設定（請根據resize調整尺寸，這裡resize是480x640，要特別注意尺寸是 (width, height)）
+    output_size = (480, 640)  # 你resize的尺寸(寬,高)
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 或 'XVID'
+    out = cv2.VideoWriter('pics/output.mp4', fourcc, fps, output_size)
+
+    colors = {
+        0: (255, 0, 0),     # person
+        28: (0, 255, 255),  # suitcase
+    }
+    
     while True:
         ret, frame = video.read()            
         if not ret:
@@ -227,9 +240,35 @@ if __name__ == "__main__":
 
         masks = getattr(results[0], 'masks', None)
         if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
-            output = results[0].plot()
+            ### plot() of ultralytics
+            # output = results[0].plot()
+
+            ### plot() of user-defined
+            result = results[0]
+            img = result.orig_img.copy()
+            boxes = result.boxes
+            names = result.names
+
+            num_classes = len(names)
+            
+            if boxes is not None and boxes.shape[0] > 0:
+                for i in range(boxes.shape[0]):
+                    x1, y1, x2, y2 = map(int, boxes.data[i, :4])
+                    conf = boxes.data[i, 4].item()
+                    cls_id = int(boxes.data[i, 5].item())
+                    label = f'{names[cls_id]}'
+                    color = colors.get(cls_id, (0, 255, 0))
+                    # Draw box
+                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 5)
+                    # Draw label
+                    cv2.putText(img, label, (x1, y1 - 10),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
+            output = img
         else:
             output = frame_resized.copy()                
+
+        # 寫入影片
+        out.write(output)  
 
         end_time = time.time()
         FPS = 1/(end_time - start_time)
@@ -237,7 +276,10 @@ if __name__ == "__main__":
         print(f"FPS: {FPS:.2f}")
         cv2.imshow("Segmented Image", output)
         cv2.waitKey(1)
-    
+
+    video.release()
+    out.release()  # 釋放 VideoWriter
+
     cv2.waitKey(0)
     cv2.destroyAllWindows() 
 
