@@ -205,7 +205,7 @@ if __name__ == "__main__":
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('/home/eden/ultralytics/examples/YOLOv8-Segmentation-ONNXRuntime-Python/pics/IMG_2894.mov')
+    video = cv2.VideoCapture('./pics/IMG_2894.mov')
     gpu_frame = cv2.cuda_GpuMat()
     while True:
         ret, frame = video.read()            
