@@ -248,6 +248,7 @@ if __name__ == "__main__":
             img = result.orig_img.copy()
             boxes = result.boxes
             names = result.names
+            masks = result.masks
 
             num_classes = len(names)
             
@@ -263,7 +264,13 @@ if __name__ == "__main__":
                     # Draw label
                     cv2.putText(img, label, (x1, y1 - 10),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-            output = img
+                    # Draw mask inside bbox
+                    mask = masks.data[i].cpu().numpy().astype(np.uint8) * 255
+                    mask_color = np.zeros_like(img, dtype=np.uint8)
+                    mask_color[:, :] = color
+                    masked = cv2.bitwise_and(mask_color, mask_color, mask=mask)
+                    img = cv2.addWeighted(img, 1.0, masked, 0.5, 0)
+                    output = img
         else:
             output = frame_resized.copy()                
 
