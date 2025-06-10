@@ -24,6 +24,31 @@ from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
+def draw_box_and_mask(img, box, mask, label, color):
+    """
+    繪製 bbox, label 和對應的 segmentation mask。
+
+    Parameters:
+        img: 原始影像（np.ndarray）
+        box: bbox 座標 (x1, y1, x2, y2)
+        mask: mask 二值影像（np.ndarray）
+        label: 要顯示的文字
+        color: RGB 顏色 (tuple)
+
+    Returns:
+        img: 處理後影像（np.ndarray）
+    """
+    x1, y1, x2, y2 = map(int, box)
+    cv2.rectangle(img, (x1, y1), (x2, y2), color, 1)
+    cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+    mask = mask.cpu().numpy().astype(np.uint8) * 255
+    mask_color = np.zeros_like(img, dtype=np.uint8)
+    mask_color[:, :] = color
+    masked = cv2.bitwise_and(mask_color, mask_color, mask=mask)
+    img = cv2.addWeighted(img, 1.0, masked, 0.5, 0)
+
+    return img
 
 class YOLOv8Seg:
     """
@@ -201,7 +226,7 @@ if __name__ == "__main__":
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('./pics/suitcase2.mp4')
+    video = cv2.VideoCapture('./pics/IMG_2963.mp4')
     gpu_frame = cv2.cuda_GpuMat()
 
     # 取得影片參數
@@ -231,7 +256,7 @@ if __name__ == "__main__":
         gpu_frame.upload(frame)
 
         # Resize to 640x480 on GPU
-        gpu_resized = cv2.cuda.resize(gpu_frame, (480, 640))
+        gpu_resized = cv2.cuda.resize(gpu_frame, output_size)
 
         # Download back to CPU
         frame_resized = gpu_resized.download()
@@ -259,17 +284,8 @@ if __name__ == "__main__":
                     cls_id = int(boxes.data[i, 5].item())
                     label = f'{names[cls_id]}'
                     color = colors.get(cls_id, (0, 255, 0))
-                    # Draw box
-                    cv2.rectangle(img, (x1, y1), (x2, y2), color, 5)
-                    # Draw label
-                    cv2.putText(img, label, (x1, y1 - 10),
-                                cv2.FONT_HERSHEY_SIMPLEX, 1, color, 2)
-                    # Draw mask inside bbox
-                    mask = masks.data[i].cpu().numpy().astype(np.uint8) * 255
-                    mask_color = np.zeros_like(img, dtype=np.uint8)
-                    mask_color[:, :] = color
-                    masked = cv2.bitwise_and(mask_color, mask_color, mask=mask)
-                    img = cv2.addWeighted(img, 1.0, masked, 0.5, 0)
+                    mask = masks.data[i]
+                    img = draw_box_and_mask(img, (x1, y1, x2, y2), mask, label, color)
                     output = img
         else:
             output = frame_resized.copy()                
