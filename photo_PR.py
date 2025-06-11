@@ -11,16 +11,21 @@ clone = image.copy()
 # 建立空的點陣列
 pts_src = []
 
-print("請依序選取紅框或黃框的四個角點（左上、右上、左下、右下）")
+# print("請依序選取紅框或黃框的四個角點（左上、右上、左下、右下）")
+
+pts_src.append([64, 12])
+pts_src.append([265, 18])
+pts_src.append([8, 786])
+pts_src.append([348, 788])
 
 # 重複選取四次 ROI
-for i in range(4):
-    roi = cv2.selectROI("Select Corner {}".format(i+1), clone, fromCenter=False, showCrosshair=True)
-    x, y, w, h = roi
-    cx = x + w // 2
-    cy = y + h // 2
-    pts_src.append([cx, cy])
-    print(f"Corner {i+1}: ({cx}, {cy})")
+# for i in range(4):
+#     roi = cv2.selectROI("Select Corner {}".format(i+1), clone, fromCenter=False, showCrosshair=True)
+#     x, y, w, h = roi
+#     cx = x + w // 2
+#     cy = y + h // 2
+#     pts_src.append([cx, cy])
+#     print(f"Corner {i+1}: ({cx}, {cy})")
 
 cv2.destroyAllWindows()
 
@@ -28,8 +33,8 @@ cv2.destroyAllWindows()
 pts_src = np.array(pts_src, dtype=np.float32)
 
 # 設定矯正後的矩形區域（寬高可視需要調整）
-output_width = 300
-output_height = 600
+output_width = 350
+output_height = 750
 pts_dst = np.float32([
     [0, 0],
     [output_width, 0],

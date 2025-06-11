@@ -50,6 +50,48 @@ def draw_box_and_mask(img, box, mask, label, color):
 
     return img
 
+def photo_PR(img):
+    clone = img.copy()
+    pts_src = []
+    
+    pts_src.append([155, 95])
+    pts_src.append([322, 95])
+    pts_src.append([97, 610])
+    pts_src.append([400, 610])
+
+    # for i in range(4):
+    #     roi = cv2.selectROI("Select Corner {}".format(i+1), clone, fromCenter=False, showCrosshair=True)
+    #     x, y, w, h = roi
+    #     cx = x + w // 2
+    #     cy = y + h // 2
+    #     pts_src.append([cx, cy])
+    #     print(f"Corner {i+1}: ({cx}, {cy})")
+
+    # 轉成 numpy float32 格式
+    pts_src = np.array(pts_src, dtype=np.float32)
+
+    # 設定矯正後的矩形區域（寬高可視需要調整）
+    output_width = 360
+    output_height = 640
+    pts_dst = np.float32([
+        [0, 0],
+        [output_width, 0],
+        [0, output_height],
+        [output_width, output_height]
+    ])
+
+    # 計算與套用透視變換
+    M = cv2.getPerspectiveTransform(pts_src, pts_dst)
+    corrected = cv2.warpPerspective(img, M, (output_width, output_height))
+
+    # 顯示結果
+    # cv2.imshow("Corrected (Top View)", corrected)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+    # breakpoint()
+
+    return corrected
+
 class YOLOv8Seg:
     """
     YOLOv8 segmentation model for performing instance segmentation using ONNX Runtime.
@@ -218,7 +260,7 @@ class YOLOv8Seg:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, required=True, help="Path to ONNX model")
+    parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
@@ -238,7 +280,7 @@ if __name__ == "__main__":
     output_size = (480, 640)  # 你resize的尺寸(寬,高)
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 或 'XVID'
-    out = cv2.VideoWriter('pics/output.mp4', fourcc, fps, output_size)
+    out = cv2.VideoWriter('pics/output.mp4', fourcc, fps, (360,640))
 
     colors = {
         0: (255, 0, 0),     # person
@@ -249,7 +291,7 @@ if __name__ == "__main__":
         ret, frame = video.read()            
         if not ret:
             break
-
+        
         start_time = time.time()
 
         # Upload to GPU        
@@ -260,7 +302,7 @@ if __name__ == "__main__":
 
         # Download back to CPU
         frame_resized = gpu_resized.download()
-
+        frame_resized = photo_PR(frame_resized)
         results = model(frame_resized)
 
         masks = getattr(results[0], 'masks', None)
@@ -289,6 +331,8 @@ if __name__ == "__main__":
                     output = img
         else:
             output = frame_resized.copy()                
+
+        
 
         # 寫入影片
         out.write(output)  
