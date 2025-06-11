@@ -24,6 +24,9 @@ from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
+output_width = 360
+output_height = 640
+
 def draw_box_and_mask(img, box, mask, label, color):
     """
     繪製 bbox, label 和對應的 segmentation mask。
@@ -53,26 +56,50 @@ def draw_box_and_mask(img, box, mask, label, color):
 def photo_PR(img):
     clone = img.copy()
     pts_src = []
+    selected_idx = None
     
-    pts_src.append([155, 95])
-    pts_src.append([322, 95])
-    pts_src.append([97, 610])
-    pts_src.append([400, 610])
+    def mouse_callback(event, x, y, flags, param):
+        nonlocal selected_idx
+        if event == cv2.EVENT_LBUTTONDOWN:
+            for i, pt in enumerate(pts_src):
+                if np.linalg.norm(np.array(pt) - np.array([x, y])) < 10:
+                    selected_idx = i
+                    return
+            if len(pts_src) < 4:
+                pts_src.append([x, y])
+        elif event == cv2.EVENT_MOUSEMOVE and selected_idx is not None:
+            pts_src[selected_idx] = [x, y]
+        elif event == cv2.EVENT_LBUTTONUP:
+            selected_idx = None
 
-    # for i in range(4):
-    #     roi = cv2.selectROI("Select Corner {}".format(i+1), clone, fromCenter=False, showCrosshair=True)
-    #     x, y, w, h = roi
-    #     cx = x + w // 2
-    #     cy = y + h // 2
-    #     pts_src.append([cx, cy])
-    #     print(f"Corner {i+1}: ({cx}, {cy})")
+    cv2.namedWindow("Select 4 Corners")
+    cv2.setMouseCallback("Select 4 Corners", mouse_callback)
+
+    while True:
+        display = clone.copy()
+        for i, pt in enumerate(pts_src):
+            cv2.circle(display, tuple(pt), 6, (0, 255, 0), -1)
+            cv2.putText(display, f"{i+1}", (pt[0]+5, pt[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        if len(pts_src) == 4:
+            cv2.polylines(display, [np.array(pts_src, np.int32).reshape((-1, 1, 2))], isClosed=True, color=(255, 0, 0), thickness=2)
+            cv2.putText(display, "Enter: confirm | R: reset | Drag points", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        else:
+            cv2.putText(display, f"Click {4-len(pts_src)} more point(s)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+
+        cv2.imshow("Select 4 Corners", display)
+        key = cv2.waitKey(1) & 0xFF
+
+        if key == 13 and len(pts_src) == 4:
+            break
+        elif key == ord('r'):
+            pts_src.clear()
+
+    cv2.destroyWindow("Select 4 Corners")
 
     # 轉成 numpy float32 格式
     pts_src = np.array(pts_src, dtype=np.float32)
 
     # 設定矯正後的矩形區域（寬高可視需要調整）
-    output_width = 360
-    output_height = 640
     pts_dst = np.float32([
         [0, 0],
         [output_width, 0],
@@ -90,7 +117,7 @@ def photo_PR(img):
     # cv2.destroyAllWindows()
     # breakpoint()
 
-    return corrected
+    return corrected, pts_src
 
 class YOLOv8Seg:
     """
@@ -230,7 +257,6 @@ class YOLOv8Seg:
 
             pred[:, :4] = ops.scale_boxes(prep_img.shape[2:], pred[:, :4], img.shape)
             masks = self.process_mask(protos[i], pred[:, 6:], pred[:, :4], img.shape[:2])
-            masks = self.process_mask(protos[i], pred[:, 6:], pred[:, :4], img.shape[:2])
             results.append(Results(img, path="", names=self.classes, boxes=pred[:, :6], masks=masks))
 
         return results
@@ -268,7 +294,7 @@ if __name__ == "__main__":
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('./pics/IMG_2963.mp4')
+    video = cv2.VideoCapture('./pics/IMG_2967.mp4')
     gpu_frame = cv2.cuda_GpuMat()
 
     # 取得影片參數
@@ -287,6 +313,25 @@ if __name__ == "__main__":
         28: (0, 255, 255),  # suitcase
     }
     
+    ret, first_frame = video.read()
+    if not ret:
+        print("無法讀取影片")
+        exit()
+
+    # 使用者選點並取得矯正圖與原始四點
+    corrected_first, pts_src = photo_PR(first_frame)
+
+    # 設定對應的目標點
+    pts_dst = np.float32([
+        [0, 0],
+        [output_width, 0],
+        [0, output_height],
+        [output_width, output_height]
+    ])
+
+    # 計算透視變換矩陣
+    M = cv2.getPerspectiveTransform(pts_src, pts_dst)
+
     while True:
         ret, frame = video.read()            
         if not ret:
@@ -302,8 +347,9 @@ if __name__ == "__main__":
 
         # Download back to CPU
         frame_resized = gpu_resized.download()
-        frame_resized = photo_PR(frame_resized)
-        results = model(frame_resized)
+        # frame_resized = photo_PR(frame_resized)
+        frame_corrected  = cv2.warpPerspective(frame_resized, M, (output_width, output_height))
+        results = model(frame_corrected )
 
         masks = getattr(results[0], 'masks', None)
         if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
@@ -312,7 +358,7 @@ if __name__ == "__main__":
 
             ### plot() of user-defined
             result = results[0]
-            img = result.orig_img.copy()
+            img = results.copy()
             boxes = result.boxes
             names = result.names
             masks = result.masks
@@ -347,7 +393,6 @@ if __name__ == "__main__":
     video.release()
     out.release()  # 釋放 VideoWriter
 
-    cv2.waitKey(0)
     cv2.destroyAllWindows() 
 
 
