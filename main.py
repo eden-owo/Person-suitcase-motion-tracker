@@ -53,7 +53,7 @@ def draw_box_and_mask(img, box, mask, label, color):
 
     return img
 
-def photo_PR(img):
+def photo_PR_roi(img):
     clone = img.copy()
     pts_src = []
     selected_idx = None
@@ -109,7 +109,7 @@ def photo_PR(img):
 
     # 計算與套用透視變換
     M = cv2.getPerspectiveTransform(pts_src, pts_dst)
-    corrected = cv2.warpPerspective(img, M, (output_width, output_height))
+    # corrected = cv2.warpPerspective(img, M, (output_width, output_height))
 
     # 顯示結果
     # cv2.imshow("Corrected (Top View)", corrected)
@@ -117,7 +117,7 @@ def photo_PR(img):
     # cv2.destroyAllWindows()
     # breakpoint()
 
-    return corrected, pts_src
+    return M, pts_dst
 
 class YOLOv8Seg:
     """
@@ -294,7 +294,7 @@ if __name__ == "__main__":
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('./pics/IMG_2967.mp4')
+    video = cv2.VideoCapture('./test/IMG_2967.mp4')
     gpu_frame = cv2.cuda_GpuMat()
 
     # 取得影片參數
@@ -319,18 +319,7 @@ if __name__ == "__main__":
         exit()
 
     # 使用者選點並取得矯正圖與原始四點
-    corrected_first, pts_src = photo_PR(first_frame)
-
-    # 設定對應的目標點
-    pts_dst = np.float32([
-        [0, 0],
-        [output_width, 0],
-        [0, output_height],
-        [output_width, output_height]
-    ])
-
-    # 計算透視變換矩陣
-    M = cv2.getPerspectiveTransform(pts_src, pts_dst)
+    M, pts_dst = photo_PR_roi(first_frame)
 
     while True:
         ret, frame = video.read()            
@@ -349,7 +338,7 @@ if __name__ == "__main__":
         frame_resized = gpu_resized.download()
         # frame_resized = photo_PR(frame_resized)
         frame_corrected  = cv2.warpPerspective(frame_resized, M, (output_width, output_height))
-        results = model(frame_corrected )
+        results = model(frame_corrected)
 
         masks = getattr(results[0], 'masks', None)
         if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
@@ -376,9 +365,7 @@ if __name__ == "__main__":
                     img = draw_box_and_mask(img, (x1, y1, x2, y2), mask, label, color)
                     output = img
         else:
-            output = frame_resized.copy()                
-
-        
+            output = frame_corrected.copy()                
 
         # 寫入影片
         out.write(output)  
