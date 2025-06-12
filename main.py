@@ -24,10 +24,9 @@ from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
-output_width = 360
-output_height = 640
-
 def draw_box_and_mask(img, box, mask, label, color):
+    if not isinstance(img, np.ndarray):
+        raise TypeError(f"img 必須是 numpy.ndarray，目前是 {type(img)}")
     """
     繪製 bbox, label 和對應的 segmentation mask。
 
@@ -71,6 +70,28 @@ def photo_PR_roi(img):
             pts_src[selected_idx] = [x, y]
         elif event == cv2.EVENT_LBUTTONUP:
             selected_idx = None
+    def sort_points(pts):
+        # pts 是 4 個 [x, y]
+        pts = np.array(pts)
+        s = pts.sum(axis=1)          # x+y
+        diff = pts[:, 0] - pts[:, 1] # x - y
+
+        top_left     = pts[np.argmin(s)]
+        bottom_right = pts[np.argmax(s)]
+        top_right    = pts[np.argmax(diff)]
+        bottom_left  = pts[np.argmin(diff)]
+
+        # 計算寬度：上邊寬和下邊寬
+        width_top = np.linalg.norm(pts[1] - pts[0])      # 右上 - 左上
+        width_bottom = np.linalg.norm(pts[2] - pts[3])   # 右下 - 左下
+        max_width = max(width_top, width_bottom)
+        
+        # 計算高度：左邊高和右邊高
+        height_left = np.linalg.norm(pts[3] - pts[0])   # 左下 - 左上
+        height_right = np.linalg.norm(pts[2] - pts[1])  # 右下 - 右上
+        max_height = max(height_left, height_right)
+
+        return np.float32([top_left, top_right, bottom_right, bottom_left]), max_width, max_height
 
     cv2.namedWindow("Select 4 Corners")
     cv2.setMouseCallback("Select 4 Corners", mouse_callback)
@@ -90,6 +111,7 @@ def photo_PR_roi(img):
         key = cv2.waitKey(1) & 0xFF
 
         if key == 13 and len(pts_src) == 4:
+            pts_src, max_width, max_height = sort_points(pts_src)  # 自動排序
             break
         elif key == ord('r'):
             pts_src.clear()
@@ -102,13 +124,14 @@ def photo_PR_roi(img):
     # 設定矯正後的矩形區域（寬高可視需要調整）
     pts_dst = np.float32([
         [0, 0],
-        [output_width, 0],
-        [0, output_height],
-        [output_width, output_height]
+        [max_width, 0],
+        [max_width, max_height],
+        [0, max_height]
     ])
 
     # 計算與套用透視變換
     M = cv2.getPerspectiveTransform(pts_src, pts_dst)
+    
     # corrected = cv2.warpPerspective(img, M, (output_width, output_height))
 
     # 顯示結果
@@ -117,7 +140,7 @@ def photo_PR_roi(img):
     # cv2.destroyAllWindows()
     # breakpoint()
 
-    return M, pts_dst
+    return M, max_width, max_height
 
 class YOLOv8Seg:
     """
@@ -288,13 +311,13 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
-    parser.add_argument("--conf", type=float, default=0.25, help="Confidence threshold")
+    parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     args = parser.parse_args()
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('./test/IMG_2967.mp4')
+    video = cv2.VideoCapture('./test/IMG_2965.mp4')
     gpu_frame = cv2.cuda_GpuMat()
 
     # 取得影片參數
@@ -303,10 +326,12 @@ if __name__ == "__main__":
     fps = video.get(cv2.CAP_PROP_FPS)
 
     # 輸出影片設定（請根據resize調整尺寸，這裡resize是480x640，要特別注意尺寸是 (width, height)）
-    output_size = (480, 640)  # 你resize的尺寸(寬,高)
+    output_resize_width = int(width * 0.5)
+    output_resize_height = int(height * 0.5)
+    output_size = (output_resize_width, output_resize_height)  # 你resize的尺寸(寬,高)
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 或 'XVID'
-    out = cv2.VideoWriter('pics/output.mp4', fourcc, fps, (360,640))
+    out = cv2.VideoWriter('pics/output.mp4', fourcc, fps, (480, 640))
 
     colors = {
         0: (255, 0, 0),     # person
@@ -318,8 +343,17 @@ if __name__ == "__main__":
         print("無法讀取影片")
         exit()
 
+    # Upload to GPU        
+    gpu_frame.upload(first_frame)
+
+    # Resize to 640x480 on GPU
+    gpu_resized = cv2.cuda.resize(gpu_frame, output_size)
+
+    # Download back to CPU
+    frame_resized = gpu_resized.download()
+    
     # 使用者選點並取得矯正圖與原始四點
-    M, pts_dst = photo_PR_roi(first_frame)
+    M, max_width, max_height = photo_PR_roi(frame_resized)
 
     while True:
         ret, frame = video.read()            
@@ -337,7 +371,7 @@ if __name__ == "__main__":
         # Download back to CPU
         frame_resized = gpu_resized.download()
         # frame_resized = photo_PR(frame_resized)
-        frame_corrected  = cv2.warpPerspective(frame_resized, M, (output_width, output_height))
+        frame_corrected  = cv2.warpPerspective(frame_resized, M, (int(max_width), int(max_height)))
         results = model(frame_corrected)
 
         masks = getattr(results[0], 'masks', None)
@@ -347,7 +381,7 @@ if __name__ == "__main__":
 
             ### plot() of user-defined
             result = results[0]
-            img = results.copy()
+            img = result.orig_img.copy()
             boxes = result.boxes
             names = result.names
             masks = result.masks
@@ -375,6 +409,7 @@ if __name__ == "__main__":
         # print(f"Frame latency: {latency_ms:.2f} ms")
         print(f"FPS: {FPS:.2f}")
         cv2.imshow("Segmented Image", output)
+        cv2.imshow("Original Image", frame_resized)
         cv2.waitKey(1)
 
     video.release()
