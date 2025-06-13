@@ -1,3 +1,8 @@
+# Instance Segmentation of People and Suitcases Using YOLOv11 and Custom C++ OpenCV Build
+
+This repository showcases instance segmentation of people and suitcases using YOLOv11 models and a self-compiled OpenCV C++ library.
+Its primary goal is to calculate the velocity of people and suitcases, and to detect any instances of falls involving either.
+This project is currently under active development and continuously being updated.
 
 🧱 Architecture
 專案結構如下，說明各模組功能與用途：
