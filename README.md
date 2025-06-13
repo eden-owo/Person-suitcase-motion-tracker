@@ -2,6 +2,7 @@
 🧱 Architecture
 專案結構如下，說明各模組功能與用途：
 
+```text
 project/
 │
 ├── main.py                # 主程式入口點，負責參數解析與整體流程控制
@@ -16,3 +17,4 @@ project/
 └── yolo/
     └── yolo_seg.py        # YOLOv8 Segmentation 模型的封裝與推論邏輯
 
+```
