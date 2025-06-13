@@ -5,7 +5,6 @@ from typing import List, Tuple, Union
 
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
-
 import cv2
 print("cv2 loaded from:", cv2.__file__)
 print("OpenCV version:", cv2.__version__)
@@ -27,6 +26,8 @@ from ultralytics.utils.checks import check_yaml
 from yolo.yolo_seg import YOLOv8Seg
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
+from utils.video_utils import load_video, resize_frame_gpu, get_video_properties, init_video_writer
+from utils.segmentor import process_frame
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -38,40 +39,32 @@ if __name__ == "__main__":
 
     model = YOLOv8Seg(args.model, args.conf, args.iou)
 
-    video = cv2.VideoCapture('./test/IMG_2964.mp4')
-    gpu_frame = cv2.cuda_GpuMat()
-
+    # 讀取影片
+    video = load_video('./test/IMG_2964.mp4')
     # 取得影片參數
-    width = int(video.get(cv2.CAP_PROP_FRAME_WIDTH))
-    height = int(video.get(cv2.CAP_PROP_FRAME_HEIGHT))
-    fps = video.get(cv2.CAP_PROP_FPS)
+    width, height, fps = get_video_properties(video)
 
-    # 輸出影片設定（請根據resize調整尺寸，這裡resize是480x640，要特別注意尺寸是 (width, height)）
-    output_resize_width = int(width * 0.5)
-    output_resize_height = int(height * 0.5)
-    output_size = (output_resize_width, output_resize_height)  # 你resize的尺寸(寬,高)
+    # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
+    resize_ratio = 0.5
+    output_resize_width = int(width * resize_ratio)
+    output_resize_height = int(height * resize_ratio)
+    resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')  # 或 'XVID'
-    out = cv2.VideoWriter('pics/output.mp4', fourcc, fps, (480, 640))
+    out = init_video_writer("pics/output.mp4", (480, 640), fps)
 
     colors = {
         0: (255, 0, 0),     # person
         28: (0, 255, 255),  # suitcase
     }
     
+    # 讀取第一幀設定ROI範圍
     ret, first_frame = video.read()
     if not ret:
         print("無法讀取影片")
         exit()
 
-    # Upload to GPU        
-    gpu_frame.upload(first_frame)
-
-    # Resize to 640x480 on GPU
-    gpu_resized = cv2.cuda.resize(gpu_frame, output_size)
-
-    # Download back to CPU
-    frame_resized = gpu_resized.download()
+    # Upload to GPU and resize      
+    frame_resized = resize_frame_gpu(first_frame, resize_size)
     
     # 使用者選點並取得矯正圖與原始四點
     # M = RP.photo_PR_roi(frame_resized)
@@ -84,44 +77,11 @@ if __name__ == "__main__":
             break
         
         start_time = time.time()
-
-        # Upload to GPU        
-        gpu_frame.upload(frame)
-
-        # Resize to 640x480 on GPU
-        gpu_resized = cv2.cuda.resize(gpu_frame, output_size)
-
-        # Download back to CPU
-        frame_resized = gpu_resized.download()
-        frame_corrected  = cv2.warpPerspective(frame_resized, M, (int(max_width), int(max_height)))
-        results = model(frame_corrected)
-
-        masks = getattr(results[0], 'masks', None)
-        if masks is not None and hasattr(results[0], 'masks') and masks.data.shape[0] > 0:
-            ### plot() of ultralytics
-            # output = results[0].plot()
-
-            ### plot() of user-defined
-            result = results[0]
-            img = result.orig_img.copy()
-            boxes = result.boxes
-            names = result.names
-            masks = result.masks
-
-            num_classes = len(names)
-            
-            if boxes is not None and boxes.shape[0] > 0:
-                for i in range(boxes.shape[0]):
-                    x1, y1, x2, y2 = map(int, boxes.data[i, :4])
-                    conf = boxes.data[i, 4].item()
-                    cls_id = int(boxes.data[i, 5].item())
-                    label = f'{names[cls_id]}'
-                    color = colors.get(cls_id, (0, 255, 0))
-                    mask = masks.data[i]
-                    img = draw_box_and_mask(img, (x1, y1, x2, y2), mask, label, color)
-                    output = img
-        else:
-            output = frame_corrected.copy()                
+  
+        # Resize frame on GPU
+        frame_resized = resize_frame_gpu(frame, resize_size)
+        
+        output = process_frame(model, frame_resized, M, max_width, max_height, colors)            
 
         # 寫入影片
         out.write(output)  
@@ -131,7 +91,7 @@ if __name__ == "__main__":
         # print(f"Frame latency: {latency_ms:.2f} ms")
         print(f"FPS: {FPS:.2f}")
         cv2.imshow("Segmented Image", output)
-        cv2.imshow("Original Image", frame_resized)
+        # cv2.imshow("Original Image", frame_resized)
         cv2.waitKey(1)
 
     video.release()
