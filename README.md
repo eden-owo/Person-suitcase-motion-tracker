@@ -18,7 +18,7 @@ This project is currently under active development and continuously being update
 project/
 │
 ├── main.py                # 主程式入口點，負責參數解析與整體流程控制
-├── config.py              # 配置檔案，包含模型路徑、分類 ID、顏色定義等設定
+├── photo_PR_example.py    # 單張影像進行幾何變形的範例程式
 │
 ├── utils/                 # 實用工具模組
 │   ├── segmentor.py       # 使用已載入的 YOLO 模型對輸入影像進行透視矯正後的即時實例分割（Instance Segmentation）。
