@@ -1,5 +1,5 @@
 # segmentor.py
-
+from ultralytics import YOLO
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
 import cv2
@@ -27,3 +27,4 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors)
             return img
     else:
         return frame_corrected
+

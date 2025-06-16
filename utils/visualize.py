@@ -26,9 +26,20 @@ def draw_box_and_mask(img, box, mask, label, color):
     cv2.rectangle(img, (x1, y1), (x2, y2), color, 1)
     cv2.putText(img, label, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
-    mask = mask.cpu().numpy().astype(np.uint8) * 255
+    # mask 從 torch tensor 轉為 numpy，值為 0 或 255，並保留單通道
+    mask = mask.cpu().numpy()
+    if mask.max() <= 1.0:
+        mask = (mask * 255).astype(np.uint8)
+    else:
+        mask = mask.astype(np.uint8)
+
+    # 確保 mask 尺寸與 img 相同（尤其是 H, W）
+    if mask.shape != img.shape[:2]:
+        mask = cv2.resize(mask, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_NEAREST)
+
     mask_color = np.zeros_like(img, dtype=np.uint8)
     mask_color[:, :] = color
+    
     masked = cv2.bitwise_and(mask_color, mask_color, mask=mask)
     img = cv2.addWeighted(img, 1.0, masked, 0.5, 0)
 

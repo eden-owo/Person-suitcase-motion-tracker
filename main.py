@@ -18,12 +18,13 @@ import onnxruntime as ort
 import torch
 import torch.nn.functional as F
 
+from ultralytics import YOLO
 import ultralytics.utils.ops as ops
 from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
-from yolo.yolo_seg import YOLOv8Seg
+# from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
 from utils.video_utils import load_video, resize_frame_gpu, get_video_properties, init_video_writer
@@ -33,11 +34,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
-    parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
+    parser.add_argument("--conf", type=float, default=0.5, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     args = parser.parse_args()
 
-    model = YOLOv8Seg(args.model, args.conf, args.iou)
+    # Run model as onnx
+    # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
+    
+    model = YOLO(args.model)
 
     # 讀取影片
     video = load_video('./test/IMG_2964.mp4')
