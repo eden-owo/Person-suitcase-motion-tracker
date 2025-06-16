@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
-    parser.add_argument("--conf", type=float, default=0.5, help="Confidence threshold")
+    parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     args = parser.parse_args()
 
