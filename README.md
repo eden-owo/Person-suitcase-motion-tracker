@@ -21,10 +21,10 @@ project/
 ├── config.py              # 配置檔案，包含模型路徑、分類 ID、顏色定義等設定
 │
 ├── utils/                 # 實用工具模組
-│   ├── video_utils.py     # 影片讀取、儲存與 GPU 加速處理
-│   ├── visualize.py       # 負責繪製 bounding boxes 與 segmentation masks
+│   ├── segmentor.py       # 使用已載入的 YOLO 模型對輸入影像進行透視矯正後的即時實例分割（Instance Segmentation）。
 │   ├── transform.py       # 提供 ROI 選取與透視變換（perspective transform）功能
-│   └── timer.py           # 計算 FPS 與處理時間的輔助工具
+│   ├── video_utils.py     # 影片讀取、儲存與 GPU 加速處理
+│   └── visualize.py       # 負責繪製 bounding boxes 與 segmentation masks
 │
 └── yolo/
     └── yolo_seg.py        # YOLOv8 Segmentation 模型的封裝與推論邏輯
