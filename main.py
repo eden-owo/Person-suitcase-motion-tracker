@@ -93,7 +93,7 @@ if __name__ == "__main__":
         end_time = time.time()
         FPS = 1/(end_time - start_time)
         # print(f"Frame latency: {latency_ms:.2f} ms")
-        print(f"FPS: {FPS:.2f}")
+        print(f"FPS: {FPS:.2f}", end='\r')
         cv2.imshow("Segmented Image", output)
         # cv2.imshow("Original Image", frame_resized)
         cv2.waitKey(1)

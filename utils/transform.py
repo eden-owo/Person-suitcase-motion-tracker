@@ -57,32 +57,41 @@ class RP:
         self.pts_src = []
         self.selected_idx = None
 
-        cv2.namedWindow("Select 4 Corners")
-        cv2.setMouseCallback("Select 4 Corners", self.mouse_callback)
+        # Test
+        self.pts_src.append([187, 137])
+        self.pts_src.append([339, 143])
+        self.pts_src.append([431, 943])
+        self.pts_src.append([141, 943])
 
-        while True:
-            display = clone.copy()
-            for i, pt in enumerate(self.pts_src):
-                cv2.circle(display, tuple(pt), 6, (0, 255, 0), -1)
-                cv2.putText(display, f"{i+1}", (pt[0]+5, pt[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-            if len(self.pts_src) == 4:
-                cv2.polylines(display, [np.array(self.pts_src, np.int32).reshape((-1, 1, 2))], isClosed=True, color=(255, 0, 0), thickness=2)
-                cv2.putText(display, "Enter: confirm | R: reset | Drag points", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
-            else:
-                cv2.putText(display, f"Click {4-len(self.pts_src)} more point(s)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+        if self.pts_src == []:
 
-            cv2.imshow("Select 4 Corners", display)
-            key = cv2.waitKey(1) & 0xFF
+            cv2.namedWindow("Select 4 Corners")
+            cv2.setMouseCallback("Select 4 Corners", self.mouse_callback)
 
-            if key == 13 and len(self.pts_src) == 4:
-                self.pts_src, max_width, max_height = self.sort_points(self.pts_src)  # 自動排序
-                break
-            elif key == ord('r'):
-                self.pts_src.clear()
+            while True:
+                display = clone.copy()
+                for i, pt in enumerate(self.pts_src):
+                    cv2.circle(display, tuple(pt), 6, (0, 255, 0), -1)
+                    cv2.putText(display, f"{i+1}", (pt[0]+5, pt[1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
-        cv2.destroyWindow("Select 4 Corners")
+                if len(self.pts_src) == 4:
+                    cv2.polylines(display, [np.array(self.pts_src, np.int32).reshape((-1, 1, 2))], isClosed=True, color=(255, 0, 0), thickness=2)
+                    cv2.putText(display, "Enter: confirm | R: reset | Drag points", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
+                else:
+                    cv2.putText(display, f"Click {4-len(self.pts_src)} more point(s)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 255), 2)
 
+                cv2.imshow("Select 4 Corners", display)
+                key = cv2.waitKey(1) & 0xFF
+
+                if key == 13 and len(self.pts_src) == 4:
+                    break
+                elif key == ord('r'):
+                    self.pts_src.clear()
+
+            cv2.destroyWindow("Select 4 Corners")
+            print("Select point: ", self.pts_src)
         # 轉成 numpy float32 格式
+        self.pts_src, max_width, max_height = self.sort_points(self.pts_src)  # 自動排序        
         self.pts_src = np.array(self.pts_src, dtype=np.float32)
 
         # 設定矯正後的矩形區域（寬高可視需要調整）
