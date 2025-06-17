@@ -18,8 +18,8 @@ import onnxruntime as ort
 import torch
 import torch.nn.functional as F
 
-from ultralytics import YOLO
 import ultralytics.utils.ops as ops
+from ultralytics import YOLO
 from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
@@ -40,7 +40,6 @@ if __name__ == "__main__":
 
     # Run model as onnx
     # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
-    
     model = YOLO(args.model)
 
     # 讀取影片

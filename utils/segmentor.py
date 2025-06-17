@@ -3,12 +3,12 @@ from ultralytics import YOLO
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
 import cv2
-from utils.visualize import draw_box_and_mask
+from utils.visualize import draw_box_and_mask, draw_box
 from ultralytics.engine.results import Boxes
 
 def process_frame(model, frame, transform_matrix, max_width, max_height, colors):
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
-    results = model.track(frame_corrected, verbose=False) 
+    results = model.track(frame_corrected, verbose=False, persist=True) 
     result = results[0]
     masks = result.masks
     boxes = result.boxes
@@ -25,18 +25,18 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors)
 
             if cls_id in allowed_classes:
                 filtered_indices.append(i)
-
+        # breakpoint()
         # 過濾 mask 與 box
         filtered_masks = masks[filtered_indices]
         filtered_boxes = {
-            'xyxy': boxes.xyxy[filtered_indices],
+            # 'xyxy': boxes.xyxy[filtered_indices],
             'conf': boxes.conf[filtered_indices],
             'cls': boxes.cls[filtered_indices],
             'id': boxes.id[filtered_indices] if hasattr(boxes, 'id') else None,
             'data': boxes.data[filtered_indices],
-            'xywh': boxes.xywh[filtered_indices],
-            'xywhn': boxes.xywhn[filtered_indices],
-            'xyxyn': boxes.xyxyn[filtered_indices],
+            # 'xywh': boxes.xywh[filtered_indices],
+            # 'xywhn': boxes.xywhn[filtered_indices],
+            # 'xyxyn': boxes.xyxyn[filtered_indices],
         }
         img = result.orig_img.copy()
         for i in range(filtered_boxes['conf'].shape[0]):
@@ -46,7 +46,8 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors)
             label = f'{names[cls_id]} ID:{track_id}' if track_id >= 0 else f'{names[cls_id]}'
             mask = filtered_masks.data[i]
             color = colors.get(cls_id, (0, 255, 0))
-            img = draw_box_and_mask(img, (x1, y1, x2, y2), mask, label, color)
+            # img = draw_box_and_mask(img, (x1, y1, x2, y2), mask, label, color)
+            img = draw_box(img, (x1, y1, x2, y2), label, color)
         return img
 
     else:

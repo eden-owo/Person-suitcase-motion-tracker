@@ -58,7 +58,7 @@ class RP:
         self.selected_idx = None
 
         # Test
-        self.pts_src.append([187, 137])
+        self.pts_src.append([187, 143])
         self.pts_src.append([339, 143])
         self.pts_src.append([431, 943])
         self.pts_src.append([141, 943])

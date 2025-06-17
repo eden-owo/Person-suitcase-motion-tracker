@@ -44,3 +44,25 @@ def draw_box_and_mask(img, box, mask, label, color):
     img = cv2.addWeighted(img, 1.0, masked, 0.5, 0)
 
     return img
+
+def draw_box(img, box, label, color):
+    if not isinstance(img, np.ndarray):
+        raise TypeError(f"img 必須是 numpy.ndarray，目前是 {type(img)}")
+
+    """
+    繪製 bbox 和文字標籤。
+
+    Parameters:
+        img: 原始影像（np.ndarray）
+        box: bbox 座標 (x1, y1, x2, y2)
+        label: 要顯示的文字
+        color: RGB 顏色 (tuple)
+
+    Returns:
+        img: 處理後影像（np.ndarray）
+    """
+    x1, y1, x2, y2 = map(int, box)
+    cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+    cv2.putText(img, label, (x1, max(0, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    return img
