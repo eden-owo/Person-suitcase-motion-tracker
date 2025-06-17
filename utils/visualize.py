@@ -109,16 +109,19 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
 
     return img
 
-def compute_speed(history, time_stamps):
-    if len(history) < 2 or len(time_stamps) < 2:
+def compute_speed(history, time_stamps, window=5):
+    if len(history) < window or len(time_stamps) < window:
         return 0.0
 
-    _, y1 = history[-2]
-    _, y2 = history[-1]
-    dy = y2 - y1
+    _, y_old = history[-window]
+    _, y_new = history[-1]
+    dy = y_new - y_old
 
-    dt = time_stamps[-1] - time_stamps[-2]
+    t_old = time_stamps[-window]
+    t_new = time_stamps[-1]
+    dt = t_new - t_old
+
     if dt == 0:
         return 0.0
 
-    return dy / dt  # 僅回傳垂直方向的速度 (pixels/ms)
+    return dy / dt  # 垂直位移 / 時間

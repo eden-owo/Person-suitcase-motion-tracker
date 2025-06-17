@@ -52,4 +52,3 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
 
     else:
         img = frame_corrected
-

@@ -118,5 +118,3 @@ if __name__ == "__main__":
     out.release()  # 釋放 VideoWriter
 
     cv2.destroyAllWindows() 
-
-
