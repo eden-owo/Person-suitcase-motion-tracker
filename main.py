@@ -28,7 +28,7 @@ from ultralytics.utils.checks import check_yaml
 # from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
-from utils.video_utils import load_video, resize_frame_gpu, get_video_properties, init_video_writer
+from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
 from utils.segmentor import process_frame
 
 if __name__ == "__main__":
@@ -54,7 +54,8 @@ if __name__ == "__main__":
     output_resize_height = int(height * resize_ratio)
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)
 
-    out = init_video_writer("test/output.mp4", (480, 640), fps)
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (output_resize_width, output_resize_height))
 
     colors = {
         0: (255, 0, 0),     # person
@@ -88,22 +89,30 @@ if __name__ == "__main__":
             continue
         
         start_time = time.time()
-  
-        # Resize frame on GPU
-        frame_resized = resize_frame_gpu(frame, resize_size)
-        
-        output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history)
 
-        # 寫入影片
-        out.write(output)  
+        try:
+            # Resize frame on GPU
+            frame_resized = resize_frame_gpu(frame, resize_size)
+            
+            output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history)
 
-        end_time = time.time()
-        FPS = 1/(end_time - start_time)
-        # print(f"Frame latency: {latency_ms:.2f} ms")
-        print(f"FPS: {FPS:.2f}", end='\r')
-        cv2.imshow("Segmented Image", output)
-        # cv2.imshow("Original Image", frame_resized)
-        cv2.waitKey(1)
+            # 寫入影片
+            if output is not None and output.size > 0:
+                out.write(output)
+            else:
+                print("Skipped writing empty frame.")
+
+            end_time = time.time()
+            FPS = 1/(end_time - start_time)
+            # print(f"Frame latency: {latency_ms:.2f} ms")
+            print(f"FPS: {FPS:.2f}", end='\r')
+            cv2.imshow("Segmented Image", output)
+            # cv2.imshow("Original Image", frame_resized)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+        except Exception as e:
+            print(f"Error during frame processing: {e}")
+            break            
 
     video.release()
     out.release()  # 釋放 VideoWriter

@@ -14,10 +14,6 @@ def get_video_properties(cap):
     fps = cap.get(cv2.CAP_PROP_FPS)
     return width, height, fps
 
-def init_video_writer(output_path, size, fps, codec='mp4v'):
-    fourcc = cv2.VideoWriter_fourcc(*codec)
-    return cv2.VideoWriter(output_path, fourcc, fps, size)
-
 def resize_frame_gpu(frame, size):
     gpu_mat = cv2.cuda_GpuMat()
     gpu_mat.upload(frame)
