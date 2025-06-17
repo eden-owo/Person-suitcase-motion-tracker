@@ -5,6 +5,7 @@ sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 
 
 import cv2
 import numpy as np
+import time
 
 def draw_box_and_mask(img, box, mask, label, color):
     if not isinstance(img, np.ndarray):
@@ -66,3 +67,58 @@ def draw_box(img, box, label, color):
     cv2.putText(img, label, (x1, max(0, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
     return img
+
+def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_history , max_len=50):
+    if not isinstance(img, np.ndarray):
+        raise TypeError(f"img 必須是 numpy.ndarray，目前是 {type(img)}")
+    
+    x1, y1, x2, y2 = map(int, box)
+    cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+    cv2.putText(img, label, (x1, max(0, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    # 加入目前中心點
+    center_x = (x1 + x2) / 2
+    img_center_x = img.shape[1] / 2
+    center_x = 0.6 * center_x + 0.4 * img_center_x  # 向中心靠近
+    center_y = (y1 + y2) / 2
+
+    # 更新位置歷史
+    track_history[track_id].append((center_x, center_y))
+
+    # 保留最多 max_len 筆資料
+    if len(track_history[track_id]) > max_len:
+        track_history[track_id] = track_history[track_id][-max_len:]
+
+    # 更新時間歷史     
+    now = time.time() * 1000  # 轉為毫秒
+    track_time_history[track_id].append(now)
+    if len(track_time_history[track_id]) > max_len:
+        track_time_history[track_id] = track_time_history[track_id][-max_len:]
+
+    # 計算速度
+    speed = compute_speed(track_history[track_id], track_time_history[track_id])  # pixels/ms
+
+    # 畫移動軌跡
+    points = np.hstack(track_history[track_id]).astype(np.int32).reshape((-1, 1, 2))
+    if len(points) >= 2:
+        cv2.polylines(img, [points], isClosed=False, color=(0, 255, 0), thickness=2)
+
+    # 顯示速度文字
+    speed_text = f"{speed:.2f} px/ms"
+    cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    return img
+
+def compute_speed(history, time_stamps):
+    if len(history) < 2 or len(time_stamps) < 2:
+        return 0.0
+
+    _, y1 = history[-2]
+    _, y2 = history[-1]
+    dy = y2 - y1
+
+    dt = time_stamps[-1] - time_stamps[-2]
+    if dt == 0:
+        return 0.0
+
+    return dy / dt  # 僅回傳垂直方向的速度 (pixels/ms)

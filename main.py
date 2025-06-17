@@ -17,6 +17,7 @@ import numpy as np
 import onnxruntime as ort
 import torch
 import torch.nn.functional as F
+from collections import defaultdict
 
 import ultralytics.utils.ops as ops
 from ultralytics import YOLO
@@ -53,7 +54,7 @@ if __name__ == "__main__":
     output_resize_height = int(height * resize_ratio)
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)
 
-    out = init_video_writer("pics/output.mp4", (480, 640), fps)
+    out = init_video_writer("test/output.mp4", (480, 640), fps)
 
     colors = {
         0: (255, 0, 0),     # person
@@ -73,18 +74,25 @@ if __name__ == "__main__":
     # M = RP.photo_PR_roi(frame_resized)
     ## 建立已封裝物件
     M, max_width, max_height = RP().photo_PR_roi(frame_resized)
+    
+    # Store the track history
+    track_history = defaultdict(lambda: [])
+    track_time_history = defaultdict(list)
 
     while True:
         ret, frame = video.read()            
         if not ret:
-            break
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            track_history = defaultdict(lambda: [])
+            track_time_history = defaultdict(list)
+            continue
         
         start_time = time.time()
   
         # Resize frame on GPU
         frame_resized = resize_frame_gpu(frame, resize_size)
         
-        output = process_frame(model, frame_resized, M, max_width, max_height, colors)            
+        output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history)
 
         # 寫入影片
         out.write(output)  
