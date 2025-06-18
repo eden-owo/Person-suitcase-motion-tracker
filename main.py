@@ -44,7 +44,7 @@ if __name__ == "__main__":
     model = YOLO(args.model)
 
     # 讀取影片
-    video = load_video('./test/IMG_2964.mp4')
+    video = load_video('./test/IMG_2963.mp4')
     # 取得影片參數
     width, height, fps = get_video_properties(video)
 
@@ -83,10 +83,11 @@ if __name__ == "__main__":
     while True:
         ret, frame = video.read()            
         if not ret:
-            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            track_history = defaultdict(lambda: [])
-            track_time_history = defaultdict(list)
-            continue
+            # video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            # track_history = defaultdict(lambda: [])
+            # track_time_history = defaultdict(list)
+            # continue
+            break
         
         start_time = time.time()
 
@@ -106,7 +107,11 @@ if __name__ == "__main__":
             FPS = 1/(end_time - start_time)
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f}", end='\r')
-            cv2.imshow("Segmented Image", output)
+            if output is not None and output.size > 0:
+                out.write(output)
+                cv2.imshow("Segmented Image", output)
+            else:
+                print("Skipped empty frame (write/show).")
             # cv2.imshow("Original Image", frame_resized)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
