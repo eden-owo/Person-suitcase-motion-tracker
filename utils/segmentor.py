@@ -3,53 +3,66 @@ from ultralytics import YOLO
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
 import cv2
+import numpy as np
 from utils.visualize import draw_box_and_mask, draw_box, draw_box_tracks
-from ultralytics.engine.results import Boxes
 
 def process_frame(model, frame, transform_matrix, max_width, max_height, colors, track_history, track_time_history):
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
-    results = model.track(frame_corrected, verbose=False, persist=True) 
+    results = model.track(frame_corrected, verbose=False, persist=True)
+    if not results or results[0] is None:
+        print("No results from model.track()")
+        return frame_corrected.copy()
+
     result = results[0]
-    masks = result.masks
-    boxes = result.boxes
-    names = result.names
-    
-    # 指定要保留的類別名稱: person=0, suitcase=28 
+
+    if not (hasattr(result, 'boxes') and result.boxes and
+            hasattr(result.boxes, 'data') and
+            hasattr(result, 'masks') and result.masks and
+            hasattr(result, 'names') and result.names):
+        print("Missing boxes, masks, or names")
+        return frame_corrected.copy()
+
+    boxes, masks, names = result.boxes, result.masks, result.names
+
+    if boxes.shape[0] == 0 or boxes.cls is None:
+        return frame_corrected.copy()
+
     allowed_classes = {0, 28}
+    cls_array = boxes.cls.cpu().numpy() if hasattr(boxes.cls, 'cpu') else np.array(boxes.cls)
+    # 用 NumPy 過濾索引
+    filtered_indices = np.where(np.isin(cls_array, list(allowed_classes)))[0]
 
-    if masks is not None and boxes is not None and boxes.shape[0] > 0:
-        filtered_indices = []
+    if filtered_indices.size == 0:
+        return frame_corrected.copy()
 
-        for i in range(boxes.shape[0]):
-            cls_id = int(boxes.cls[i])
+    # 過濾 boxes 資料 (先轉 numpy，確保可索引)
+    def safe_index(attr):
+        if attr is None:
+            return None
+        arr = attr.cpu().numpy() if hasattr(attr, 'cpu') else np.array(attr)
+        return arr[filtered_indices]
 
-            if cls_id in allowed_classes:
-                filtered_indices.append(i)
-        # breakpoint()
-        # 過濾 mask 與 box
-        filtered_masks = masks[filtered_indices]
-        filtered_boxes = {
-            # 'xyxy': boxes.xyxy[filtered_indices],
-            'conf': boxes.conf[filtered_indices],
-            'cls': boxes.cls[filtered_indices],
-            'id': boxes.id[filtered_indices] if hasattr(boxes, 'id') else None,
-            'data': boxes.data[filtered_indices],
-            # 'xywh': boxes.xywh[filtered_indices],
-            # 'xywhn': boxes.xywhn[filtered_indices],
-            # 'xyxyn': boxes.xyxyn[filtered_indices],
-        }
-        img = result.orig_img.copy()
-        for i in range(filtered_boxes['conf'].shape[0]):
-            x1, y1, x2, y2 = map(int, filtered_boxes['data'][i, :4])
-            cls_id = int(filtered_boxes['cls'][i].item())
-            track_id = int(filtered_boxes['id'][i].item()) if filtered_boxes['id'] is not None else -1
-            label = f'{names[cls_id]} ID:{track_id}' if track_id >= 0 else f'{names[cls_id]}'
-            color = colors.get(cls_id, (0, 255, 0))
-            # mask = filtered_masks.data[i]
-            # img = draw_box_and_mask(img, (x1, y1, x2, y2), mask, label, color)
-            img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history)
-        return img
+    filtered_conf = safe_index(boxes.conf)
+    filtered_cls = safe_index(boxes.cls)
+    filtered_id = safe_index(boxes.id) if hasattr(boxes, 'id') else None
+    filtered_data = safe_index(boxes.data)
 
-    else:
-        img = frame_corrected
-        return img
+    if filtered_data is None or filtered_data.shape[0] == 0:
+        print("Invalid or missing data tensor")
+        return frame_corrected.copy()
+
+    img = result.orig_img.copy()
+    for i in range(filtered_data.shape[0]):
+        try:
+            x1, y1, x2, y2 = map(int, filtered_data[i, :4])
+        except Exception as e:
+            print(f"Failed to extract box coordinates at index {i}: {e}")
+            continue
+
+        cls_id = int(filtered_cls[i]) if filtered_cls is not None else -1
+        track_id = int(filtered_id[i]) if filtered_id is not None else -1
+        label = f'{names[cls_id]} ID:{track_id}' if track_id >= 0 else f'{names[cls_id]}' if cls_id >= 0 else 'Unknown'
+        color = colors.get(cls_id, (0, 255, 0))
+        img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history)
+
+    return img
