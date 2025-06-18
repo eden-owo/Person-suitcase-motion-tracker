@@ -52,10 +52,7 @@ if __name__ == "__main__":
     resize_ratio = 0.5
     output_resize_width = int(width * resize_ratio)
     output_resize_height = int(height * resize_ratio)
-    resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (output_resize_width, output_resize_height))
+    resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     colors = {
         0: (255, 0, 0),     # person
@@ -75,6 +72,9 @@ if __name__ == "__main__":
     # M = RP.photo_PR_roi(frame_resized)
     ## 建立已封裝物件
     M, max_width, max_height = RP().photo_PR_roi(frame_resized)
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (int(max_width), int(max_height)))
     
     # Store the track history
     track_history = defaultdict(lambda: [])
@@ -96,12 +96,6 @@ if __name__ == "__main__":
             frame_resized = resize_frame_gpu(frame, resize_size)
             
             output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history)
-
-            # 寫入影片
-            if output is not None and output.size > 0:
-                out.write(output)
-            else:
-                print("Skipped writing empty frame.")
 
             end_time = time.time()
             FPS = 1/(end_time - start_time)
