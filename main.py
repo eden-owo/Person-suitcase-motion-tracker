@@ -37,14 +37,18 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
+    parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
 
     # Run model as onnx
     # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
     model = YOLO(args.model)
 
-    # 讀取影片
-    video = load_video('./test/IMG_2963.mp4')
+    if(args.rtsp):
+        video = load_video(args.rtsp)
+    else:
+        # 讀取影片
+        video = load_video('./test/IMG_2963.mp4')
     # 取得影片參數
     width, height, fps = get_video_properties(video)
 
@@ -83,11 +87,11 @@ if __name__ == "__main__":
     while True:
         ret, frame = video.read()            
         if not ret:
-            # video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            # track_history = defaultdict(lambda: [])
-            # track_time_history = defaultdict(list)
-            # continue
-            break
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            track_history = defaultdict(lambda: [])
+            track_time_history = defaultdict(list)
+            continue
+            # break
         
         start_time = time.time()
 
