@@ -3,7 +3,7 @@
 
 This repository showcases instance segmentation of people and suitcases using YOLOv11 models and a self-compiled OpenCV C++ library.
 
-Its primary goal is to calculate the velocity of people and suitcases, and to detect any instances of falls involving either.
+With calculating the velocity of people and suitcases, its primary goal is to detect any instances of falls involving either.
 
 <figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/demo.png" alt=""><figcaption></figcaption></figure>
 
