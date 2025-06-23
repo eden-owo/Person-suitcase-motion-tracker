@@ -67,8 +67,9 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
 
     return img
 
-def process_face(model, frame):
+import cv2
 
+def process_face(model, frame):
     results = model(frame)
     if not results or results[0] is None:
         print("No results from model()")
@@ -78,15 +79,28 @@ def process_face(model, frame):
 
     if not (hasattr(result, 'boxes') and result.boxes and
             hasattr(result.boxes, 'data') and
-            hasattr(result, 'masks') and result.masks and
             hasattr(result, 'names') and result.names):
-        print("Missing boxes, masks, or names")
+        print("Missing boxes or names")
         return frame.copy()
 
-    boxes, masks, names = result.boxes, result.masks, result.names
+    boxes, names = result.boxes, result.names
 
     if boxes.shape[0] == 0 or boxes.cls is None:
         return frame.copy()
-    else:
-        img = result.orig_img.copy()
-        return img
+
+    img = frame.copy()
+
+    for i in range(boxes.shape[0]):
+        xyxy = boxes.xyxy[i].cpu().numpy().astype(int)
+        cls_id = int(boxes.cls[i].item())
+        conf = boxes.conf[i].item()
+        label = f"{names[cls_id]} {conf:.2f}"
+
+        # Draw rectangle
+        cv2.rectangle(img, (xyxy[0], xyxy[1]), (xyxy[2], xyxy[3]), (0, 255, 0), 2)
+
+        # Draw label
+        cv2.putText(img, label, (xyxy[0], xyxy[1] - 10),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+
+    return img
