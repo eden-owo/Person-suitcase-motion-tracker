@@ -66,3 +66,27 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
         img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history)
 
     return img
+
+def process_face(model, frame):
+
+    results = model(frame)
+    if not results or results[0] is None:
+        print("No results from model()")
+        return frame.copy()
+
+    result = results[0]
+
+    if not (hasattr(result, 'boxes') and result.boxes and
+            hasattr(result.boxes, 'data') and
+            hasattr(result, 'masks') and result.masks and
+            hasattr(result, 'names') and result.names):
+        print("Missing boxes, masks, or names")
+        return frame.copy()
+
+    boxes, masks, names = result.boxes, result.masks, result.names
+
+    if boxes.shape[0] == 0 or boxes.cls is None:
+        return frame.copy()
+    else:
+        img = result.orig_img.copy()
+        return img
