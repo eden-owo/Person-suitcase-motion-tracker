@@ -5,8 +5,6 @@ This repository showcases instance segmentation of people and suitcases using YO
 
 Its primary goal is to calculate the velocity of people and suitcases, and to detect any instances of falls involving either.
 
-This project is currently under active development and continuously being updated.
-
 <figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/demo.png" alt=""><figcaption></figcaption></figure>
 
 
