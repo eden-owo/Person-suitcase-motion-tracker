@@ -7,6 +7,9 @@ Its primary goal is to calculate the velocity of people and suitcases, and to de
 
 This project is currently under active development and continuously being updated.
 
+<figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/demo.png" alt=""><figcaption></figcaption></figure>
+
+
 
 🧱 Architecture
 
