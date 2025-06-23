@@ -70,7 +70,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
 import cv2
 
 def process_face(model, frame):
-    results = model(frame)
+    results = model(frame, verbose=False)
     if not results or results[0] is None:
         print("No results from model()")
         return frame.copy()
@@ -92,15 +92,24 @@ def process_face(model, frame):
 
     for i in range(boxes.shape[0]):
         xyxy = boxes.xyxy[i].cpu().numpy().astype(int)
-        cls_id = int(boxes.cls[i].item())
-        conf = boxes.conf[i].item()
-        label = f"{names[cls_id]} {conf:.2f}"
+        x1, y1, x2, y2 = xyxy
 
-        # Draw rectangle
-        cv2.rectangle(img, (xyxy[0], xyxy[1]), (xyxy[2], xyxy[3]), (0, 255, 0), 2)
+        # 限制在畫面範圍內，避免越界
+        x1 = max(0, x1)
+        y1 = max(0, y1)
+        x2 = min(img.shape[1], x2)
+        y2 = min(img.shape[0], y2)
 
-        # Draw label
-        cv2.putText(img, label, (xyxy[0], xyxy[1] - 10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        # 擷取臉部區域並進行模糊
+        face_region = img[y1:y2, x1:x2]
+        blurred_face = cv2.GaussianBlur(face_region, (51, 51), 0)
+
+        # 替換原本臉部區域
+        img[y1:y2, x1:x2] = blurred_face
+
+        # （可選）加框與標籤
+        # cv2.rectangle(img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        # cv2.putText(img, f"{names[int(boxes.cls[i])]} {boxes.conf[i]:.2f}",
+        #             (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
 
     return img

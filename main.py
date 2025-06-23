@@ -37,6 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
+    parser.add_argument("--resize_ratio", type=float, default=1.0, help=" Video resize ratio")
     parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
 
@@ -48,14 +49,13 @@ if __name__ == "__main__":
         video = load_video(args.rtsp)
     else:
         # 讀取影片
-        video = load_video('./test/IMG_2963.mp4')
+        video = load_video('./test/output_preprocess_1.mp4')
     # 取得影片參數
     width, height, fps = get_video_properties(video)
 
     # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
-    resize_ratio = 0.5
-    output_resize_width = int(width * resize_ratio)
-    output_resize_height = int(height * resize_ratio)
+    output_resize_width = int(width * args.resize_ratio)
+    output_resize_height = int(height * args.resize_ratio)
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     colors = {

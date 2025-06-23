@@ -34,7 +34,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
-    parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
+    parser.add_argument("--conf", type=float, default=0.1, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
@@ -87,11 +87,11 @@ if __name__ == "__main__":
     while True:
         ret, frame = video.read()            
         if not ret:
-            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            track_history = defaultdict(lambda: [])
-            track_time_history = defaultdict(list)
-            continue
-            # break
+            # video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            # track_history = defaultdict(lambda: [])
+            # track_time_history = defaultdict(list)
+            # continue
+            break
         
         start_time = time.time()
 
