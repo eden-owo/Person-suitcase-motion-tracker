@@ -68,18 +68,18 @@ def draw_box(img, box, label, color):
 
     return img
 
-def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_history , max_len=50):
+def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_history , max_len=100):
     if not isinstance(img, np.ndarray):
         raise TypeError(f"img 必須是 numpy.ndarray，目前是 {type(img)}")
     
     x1, y1, x2, y2 = map(int, box)
-    cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-    cv2.putText(img, label, (x1, max(0, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    # cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+    # cv2.putText(img, label, (x1, max(0, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
     # 加入目前中心點
     center_x = (x1 + x2) / 2
-    img_center_x = img.shape[1] / 2
-    center_x = 0.6 * center_x + 0.4 * img_center_x  # 向中心靠近
+    # img_center_x = img.shape[1] / 2
+    # center_x = 0.6 * center_x + 0.4 * img_center_x  # 向中心靠近
     center_y = (y1 + y2) / 2
 
     # 更新位置歷史
@@ -95,8 +95,8 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
     if len(track_time_history[track_id]) > max_len:
         track_time_history[track_id] = track_time_history[track_id][-max_len:]
 
-    # 計算速度
-    speed = compute_speed(track_history[track_id], track_time_history[track_id])  # pixels/ms
+    # 計算速度 (pixels/ms)
+    speed = compute_speed(track_history[track_id], track_time_history[track_id])
 
     # 畫移動軌跡
     points = np.hstack(track_history[track_id]).astype(np.int32).reshape((-1, 1, 2))
@@ -104,8 +104,15 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
         cv2.polylines(img, [points], isClosed=False, color=(0, 255, 0), thickness=2)
 
     # 顯示速度文字
-    speed_text = f"{speed:.2f} px/ms"
-    cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+    # speed_text = f"{speed:.2f} px/ms"
+    # cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+
+    # 顯示移動狀態
+    if speed > 0.1:
+        # is_speed_text = f"moving"
+        # cv2.putText(img, is_speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+        speed_text = f"{speed:.2f} px/ms"
+        cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)    
 
     return img
 

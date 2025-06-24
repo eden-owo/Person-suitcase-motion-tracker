@@ -37,7 +37,7 @@ if __name__ == "__main__":
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
-    parser.add_argument("--resize_ratio", type=float, default=1.0, help=" Video resize ratio")
+    parser.add_argument("--resize_ratio", type=float, default=1.0, help="Video resize ratio")
     parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
 
@@ -50,6 +50,8 @@ if __name__ == "__main__":
     else:
         # 讀取影片
         video = load_video('./test/output_preprocess_1.mp4')
+        # video = load_video('./test/772104971.057013.mp4')
+        
     # 取得影片參數
     width, height, fps = get_video_properties(video)
 
@@ -59,7 +61,7 @@ if __name__ == "__main__":
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     colors = {
-        0: (255, 0, 0),     # person
+        0: (255, 0, 255),     # person
         28: (0, 255, 255),  # suitcase
     }
     
