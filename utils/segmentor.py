@@ -6,7 +6,7 @@ import cv2
 import numpy as np
 from utils.visualize import draw_box_and_mask, draw_box, draw_box_tracks
 
-def process_frame(model, frame, transform_matrix, max_width, max_height, colors, track_history, track_time_history):
+def process_frame(model, frame, transform_matrix, max_width, max_height, colors, track_history, track_time_history, track_box_history):
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
     results = model.track(frame_corrected, verbose=False, persist=True)
     if not results or results[0] is None:
@@ -63,7 +63,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
         track_id = int(filtered_id[i]) if filtered_id is not None else -1
         label = f'{names[cls_id]} ID:{track_id}' if track_id >= 0 else f'{names[cls_id]}' if cls_id >= 0 else 'Unknown'
         color = colors.get(cls_id, (0, 255, 0))
-        img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history)
+        img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history, track_box_history)
 
     return img
 

@@ -14,7 +14,7 @@ print("CUDA-enabled device count:", cv2.cuda.getCudaEnabledDeviceCount())
 
 import time
 import numpy as np
-import onnxruntime as ort
+# import onnxruntime as ort
 import torch
 import torch.nn.functional as F
 from collections import defaultdict
@@ -26,6 +26,7 @@ from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
 # from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
+# from yolo.yolo_seg import YOLOv8Seg
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
 from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
@@ -44,6 +45,7 @@ if __name__ == "__main__":
     # Run model as onnx
     # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
     model = YOLO(args.model)
+    # model = YOLOv8Seg_TRT(args.model, conf=args.conf, iou=args.iou)
 
     if(args.rtsp):
         video = load_video(args.rtsp)
@@ -61,8 +63,8 @@ if __name__ == "__main__":
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     colors = {
-        0: (255, 0, 255),     # person
-        28: (0, 255, 255),  # suitcase
+        0: (255, 0, 0),     # person
+        28: (0, 255, 0),  # suitcase
     }
     
     # 讀取第一幀設定ROI範圍
@@ -85,15 +87,17 @@ if __name__ == "__main__":
     # Store the track history
     track_history = defaultdict(lambda: [])
     track_time_history = defaultdict(list)
+    track_box_history = defaultdict(list)
 
     while True:
         ret, frame = video.read()            
         if not ret:
-            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            track_history = defaultdict(lambda: [])
-            track_time_history = defaultdict(list)
-            continue
-            # break
+            # video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            # track_history = defaultdict(lambda: [])
+            # track_time_history = defaultdict(list)
+            # track_box_history = defaultdict(list)
+            # continue
+            break
         
         start_time = time.time()
 
@@ -101,7 +105,7 @@ if __name__ == "__main__":
             # Resize frame on GPU
             frame_resized = resize_frame_gpu(frame, resize_size)
             
-            output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history)
+            output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history, track_box_history)
 
             end_time = time.time()
             FPS = 1/(end_time - start_time)

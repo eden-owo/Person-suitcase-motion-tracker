@@ -7,7 +7,7 @@ import cv2
 
 import time
 import numpy as np
-import onnxruntime as ort
+# import onnxruntime as ort
 import torch
 import torch.nn.functional as F
 

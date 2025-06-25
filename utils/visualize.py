@@ -68,19 +68,28 @@ def draw_box(img, box, label, color):
 
     return img
 
-def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_history , max_len=100):
+def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_history, track_box_history , max_len=20):
     if not isinstance(img, np.ndarray):
         raise TypeError(f"img 必須是 numpy.ndarray，目前是 {type(img)}")
     
     x1, y1, x2, y2 = map(int, box)
-    # cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
     # cv2.putText(img, label, (x1, max(0, y1 - 10)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
+    # 更新box歷史
+    track_box_history[track_id].append((x1, y1, x2, y2))
+    if len(track_box_history[track_id]) > max_len:
+        track_box_history[track_id] = track_box_history[track_id][-max_len:]
+
+    # 使用最近最多5筆 box 計算平滑中心點
+    recent_boxes = track_box_history[track_id][-max_len:]
+    avg_x1 = sum(b[0] for b in recent_boxes) / len(recent_boxes)
+    avg_y1 = sum(b[1] for b in recent_boxes) / len(recent_boxes)
+    avg_x2 = sum(b[2] for b in recent_boxes) / len(recent_boxes)
+    avg_y2 = sum(b[3] for b in recent_boxes) / len(recent_boxes)
+
     # 加入目前中心點
-    center_x = (x1 + x2) / 2
-    # img_center_x = img.shape[1] / 2
-    # center_x = 0.6 * center_x + 0.4 * img_center_x  # 向中心靠近
-    center_y = (y1 + y2) / 2
+    center_x = (avg_x1 + avg_x2) / 2
+    center_y = (avg_y1 + avg_y2) / 2
 
     # 更新位置歷史
     track_history[track_id].append((center_x, center_y))
@@ -101,22 +110,29 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
     # 畫移動軌跡
     points = np.hstack(track_history[track_id]).astype(np.int32).reshape((-1, 1, 2))
     if len(points) >= 2:
-        cv2.polylines(img, [points], isClosed=False, color=(0, 255, 0), thickness=2)
+        cv2.polylines(img, [points], isClosed=False, color=color, thickness=2)
 
     # 顯示速度文字
     # speed_text = f"{speed:.2f} px/ms"
     # cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
     # 顯示移動狀態
-    if speed > 0.1:
+    if speed < 0.005:
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+    elif speed > 0.10:
         # is_speed_text = f"moving"
         # cv2.putText(img, is_speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         speed_text = f"{speed:.2f} px/ms"
+        cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)    
+        cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+    else:
+        speed_text = f"{speed:.2f} px/ms"
         cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)    
+        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)        
 
     return img
 
-def compute_speed(history, time_stamps, window=5):
+def compute_speed(history, time_stamps, window=20):
     if len(history) < window or len(time_stamps) < window:
         return 0.0
 
