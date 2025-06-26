@@ -8,31 +8,39 @@ from utils.visualize import draw_box_and_mask, draw_box, draw_box_tracks
 
 def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
                   track_history, track_time_history, track_box_history):
+    import numpy as np
+    import cv2
+
     # 做投影矯正
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
 
-    # TensorRT 推論，回傳 list of dict
-    results = model.infer(frame_corrected)
+    # TensorRT 推論
+    results = model.predict(frame_corrected, device=0)
 
     if not results or len(results) == 0:
         return frame_corrected.copy()
 
     img = frame_corrected.copy()
+    result = results[0]  # 處理第一張圖片結果
 
-    for det in results:
-        cls_id = det["class_id"]
-        conf = det["conf"]
-        x1, y1, x2, y2 = map(int, det["box"])
-        label = f"cls:{cls_id} {conf:.2f}"
-        color = colors.get(cls_id, (0, 255, 0))
-        track_id = -1  # 你可以選擇實作 tracker 再補上
+    # 處理物件框
+    boxes = result.boxes
+    if boxes is not None:
+        for box in boxes:
+            xyxy = box.xyxy[0].cpu().numpy().astype(int)  # (x1, y1, x2, y2)
+            conf = float(box.conf[0])
+            cls_id = int(box.cls[0])
+            label = f"cls:{cls_id} {conf:.2f}"
+            color = colors.get(cls_id, (0, 255, 0))
+            track_id = -1  # 沒有追蹤器可用
 
-        img = draw_box_tracks(
-            img, (x1, y1, x2, y2), label, color,
-            track_id, track_history, track_time_history, track_box_history
-        )
+            img = draw_box_tracks(
+                img, xyxy, label, color,
+                track_id, track_history, track_time_history, track_box_history
+            )
 
     return img
+
 
 def process_face(model, frame):
     results = model(frame, verbose=False)

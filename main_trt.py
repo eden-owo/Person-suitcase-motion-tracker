@@ -42,18 +42,18 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
 
-    # Run model as onnx
-    # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
     if args.model.endswith(".pt"):
-        # model = YOLO(args.model)
-        # model.export(format="engine")
-        tensorrt_model = YOLO("model/yolo11m-seg.engine")
-    else:
-        model = YOLO(args.model)
-    result = tensorrt_model.predict("https://ultralytics.com/images/bus.jpg", device=0)
-    breakpoint()
-
-    # model = YOLOv8Seg_TRT(args.model, conf=args.conf, iou=args.iou)
+        pt_model = YOLO(args.model)        
+        pt_model.export(format="engine")
+        model = YOLO("model/yolo11m-seg.engine")
+    # elif args.model.endswith(".onnx"):
+    #     model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
+    elif args.model.endswith(".engine"):    # model/yolo11m-seg.engine
+        model = YOLO(args.model) 
+    else: 
+        raise NotImplementedError
+        
+    # result = model.predict("https://ultralytics.com/images/bus.jpg", device=0)
 
     if(args.rtsp):
         video = load_video(args.rtsp)
