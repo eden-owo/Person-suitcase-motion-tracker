@@ -44,8 +44,16 @@ if __name__ == "__main__":
 
     # Run model as onnx
     # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
-    # model = YOLO(args.model)
-    model = YOLOv8Seg_TRT(args.model, conf=args.conf, iou=args.iou)
+    if args.model.endswith(".pt"):
+        # model = YOLO(args.model)
+        # model.export(format="engine")
+        tensorrt_model = YOLO("model/yolo11m-seg.engine")
+    else:
+        model = YOLO(args.model)
+    result = tensorrt_model.predict("https://ultralytics.com/images/bus.jpg", device=0)
+    breakpoint()
+
+    # model = YOLOv8Seg_TRT(args.model, conf=args.conf, iou=args.iou)
 
     if(args.rtsp):
         video = load_video(args.rtsp)

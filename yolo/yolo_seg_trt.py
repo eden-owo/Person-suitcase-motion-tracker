@@ -2,8 +2,6 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 import numpy as np
-import sys
-sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')
 import cv2
 
 
@@ -17,26 +15,48 @@ class YOLOv8Seg_TRT:
             self.engine = runtime.deserialize_cuda_engine(f.read())
         self.context = self.engine.create_execution_context()
 
-        print(f"Engine has {self.engine.num_bindings} bindings:")
-        for i in range(self.engine.num_bindings):
-            name = self.engine.get_tensor_name(i)
-            shape = self.engine.get_tensor_shape(name)
-            io = "input" if self.engine.binding_is_input(i) else "output"
-            print(f"  Binding {i}: name={name}, shape={shape}, {io}")
+        # 相容 TRT 8/9/10
+        if hasattr(self.engine, "get_tensor_index"):
+            self.get_index = self.engine.get_tensor_index
+            self.get_name = self.engine.get_tensor_name
+            self.get_shape = self.engine.get_tensor_shape
+            self.get_mode = self.engine.get_tensor_mode
+            self.num_io = self.engine.num_io_tensors
+        else:
+            self.get_index = self.engine.get_binding_index
+            self.get_name = self.engine.get_binding_name
+            self.get_shape = self.engine.get_binding_shape
+            self.get_mode = lambda i: "INPUT" if self.engine.binding_is_input(i) else "OUTPUT"
+            self.num_io = self.engine.num_bindings
 
-        # 取得輸入輸出索引
-        self.input_binding_idx = next(i for i in range(self.engine.num_bindings) if self.engine.binding_is_input(i))
-        self.output_binding_idx = next(i for i in range(self.engine.num_bindings) if not self.engine.binding_is_input(i))
+        print(f"Engine has {self.num_io} IO tensors:")
+        self.output_tensor_names = []
+        for i in range(self.num_io):
+            name = self.get_name(i)
+            shape = self.get_shape(i)
+            mode = self.get_mode(i)
+            print(f"  - Tensor {i}: name={name}, shape={shape}, mode={mode}")
+            if mode != "INPUT":
+                self.output_tensor_names.append(name)
+            else:
+                self.input_tensor_name = name
 
-        self.input_shape = tuple(self.engine.get_binding_shape(self.input_binding_idx))
-        self.output_shape = tuple(self.engine.get_binding_shape(self.output_binding_idx))
+        # 記憶體配置
+        self.input_shape = tuple(self.get_shape(self.get_index(self.input_tensor_name)))
+        self.output_shapes = [
+            tuple(self.get_shape(self.get_index(name))) for name in self.output_tensor_names
+        ]
 
         self.d_input = cuda.mem_alloc(int(np.prod(self.input_shape)) * 4)
-        self.d_output = cuda.mem_alloc(int(np.prod(self.output_shape)) * 4)
+        self.d_outputs = [cuda.mem_alloc(int(np.prod(shape)) * 4) for shape in self.output_shapes]
 
-        self.bindings = [0] * self.engine.num_bindings
-        self.bindings[self.input_binding_idx] = int(self.d_input)
-        self.bindings[self.output_binding_idx] = int(self.d_output)
+        self.bindings = [0] * self.num_io
+        self.context.set_tensor_address(self.input_tensor_name, int(self.d_input))
+        self.bindings[self.get_index(self.input_tensor_name)] = int(self.d_input)
+
+        for name, d_out in zip(self.output_tensor_names, self.d_outputs):
+            self.context.set_tensor_address(name, int(d_out))
+            self.bindings[self.get_index(name)] = int(d_out)
 
     def preprocess(self, image: np.ndarray) -> np.ndarray:
         resized = cv2.resize(image, (640, 640))
@@ -45,8 +65,10 @@ class YOLOv8Seg_TRT:
         img = np.expand_dims(img, axis=0)  # Add batch dim
         return np.ascontiguousarray(img.astype(np.float32))
 
-    def postprocess(self, output: np.ndarray, original_shape: tuple[int, int]) -> list[np.ndarray]:
-        preds = output[0]
+    def postprocess(self, outputs: list[np.ndarray], original_shape: tuple[int, int]) -> list[dict]:
+        # 只使用 output0 做分類框篩選（根據 yolo task 預設）
+        output0 = outputs[0]
+        preds = output0[0]
         conf_mask = preds[:, 4] > self.conf
         preds = preds[conf_mask]
 
@@ -54,6 +76,7 @@ class YOLOv8Seg_TRT:
         class_ids = preds[:, 5:].argmax(axis=1)
         confidences = preds[:, 4] * preds[:, 5:].max(axis=1)
 
+        # 轉換為 xyxy 格式
         boxes_xywh = boxes.copy()
         boxes_xywh[:, 0] -= boxes[:, 2] / 2
         boxes_xywh[:, 1] -= boxes[:, 3] / 2
@@ -80,22 +103,17 @@ class YOLOv8Seg_TRT:
     def infer(self, image: np.ndarray) -> list[dict]:
         input_tensor = self.preprocess(image)
 
-        # 1. 不用 set_input_shape (視 engine 是否為動態形狀)
-        #    如果你的 engine 是固定形狀，可省略
-
-        # 2. 用固定的 input/output shape 分配記憶體
-        output = np.empty(self.output_shape, dtype=np.float32)
-
-        # 3. 複製 input 到 GPU
+        # 複製 input 到 GPU
         cuda.memcpy_htod(self.d_input, input_tensor)
 
-        # 4. 執行推論時，帶入 bindings（GPU address list）
+        # 執行推論
         self.context.execute_v2(self.bindings)
 
-        # 5. 拷回輸出結果
-        cuda.memcpy_dtoh(output, self.d_output)
+        # 拷貝所有 output 回來
+        host_outputs = []
+        for shape, d_out in zip(self.output_shapes, self.d_outputs):
+            h_out = np.empty(shape, dtype=np.float32)
+            cuda.memcpy_dtoh(h_out, d_out)
+            host_outputs.append(h_out)
 
-        return self.postprocess(output, image.shape[:2])
-
-
-
+        return self.postprocess(host_outputs, image.shape[:2])
