@@ -6,7 +6,8 @@ import cv2
 import numpy as np
 from utils.visualize import draw_box_and_mask, draw_box, draw_box_tracks
 
-def process_frame(model, frame, transform_matrix, max_width, max_height, colors, track_history, track_time_history, track_box_history):
+def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
+                  track_history, track_time_history, track_box_history):
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
     results = model.track(frame_corrected, verbose=False, persist=True)
     if not results or results[0] is None:
@@ -42,7 +43,6 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
         arr = attr.cpu().numpy() if hasattr(attr, 'cpu') else np.array(attr)
         return arr[filtered_indices]
 
-    filtered_conf = safe_index(boxes.conf)
     filtered_cls = safe_index(boxes.cls)
     filtered_id = safe_index(boxes.id) if hasattr(boxes, 'id') else None
     filtered_data = safe_index(boxes.data)

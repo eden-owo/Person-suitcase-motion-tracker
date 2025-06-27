@@ -12,13 +12,20 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
 
     # TensorRT 推論
-    results = model.predict(frame_corrected, device=0)
+    results = model.track(frame_corrected, verbose=False, persist=True, device=0)
 
-    if not results or len(results) == 0:
+    if not results or results[0] is None:
+        print("No results from model.track()")
         return frame_corrected.copy()
 
-    img = frame_corrected.copy()
     result = results[0]  # 處理第一張圖片結果
+
+    if not (hasattr(result, 'boxes') and result.boxes and
+            hasattr(result.boxes, 'data') and
+            hasattr(result, 'masks') and result.masks and
+            hasattr(result, 'names') and result.names):
+        print("Missing boxes, masks, or names")
+        return frame_corrected.copy()
 
     # 處理物件框
     boxes, masks, names = result.boxes, result.masks, result.names
@@ -41,11 +48,10 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
         arr = attr.cpu().numpy() if hasattr(attr, 'cpu') else np.array(attr)
         return arr[filtered_indices]
 
-    filtered_conf = safe_index(boxes.conf)
     filtered_cls = safe_index(boxes.cls)
     filtered_id = safe_index(boxes.id) if hasattr(boxes, 'id') else None
     filtered_data = safe_index(boxes.data)
-
+    
     if filtered_data is None or filtered_data.shape[0] == 0:
         print("Invalid or missing data tensor")
         return frame_corrected.copy()
