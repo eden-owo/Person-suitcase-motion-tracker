@@ -57,8 +57,6 @@ if __name__ == "__main__":
         model = YOLO(args.model) 
     else: 
         raise NotImplementedError
-        
-    # result = model.predict("https://ultralytics.com/images/bus.jpg", device=0)
 
     if(args.rtsp):
         video = load_video(args.rtsp)

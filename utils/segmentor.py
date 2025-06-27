@@ -67,8 +67,6 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
 
     return img
 
-import cv2
-
 def process_face(model, frame):
     results = model(frame, verbose=False)
     if not results or results[0] is None:

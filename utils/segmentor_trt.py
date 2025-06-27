@@ -21,20 +21,48 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
     result = results[0]  # 處理第一張圖片結果
 
     # 處理物件框
-    boxes = result.boxes
-    if boxes is not None:
-        for box in boxes:
-            xyxy = box.xyxy[0].cpu().numpy().astype(int)  # (x1, y1, x2, y2)
-            conf = float(box.conf[0])
-            cls_id = int(box.cls[0])
-            label = f"cls:{cls_id} {conf:.2f}"
-            color = colors.get(cls_id, (0, 255, 0))
-            track_id = -1  # 沒有追蹤器可用
+    boxes, masks, names = result.boxes, result.masks, result.names
 
-            img = draw_box_tracks(
-                img, xyxy, label, color,
-                track_id, track_history, track_time_history, track_box_history
-            )
+    if boxes.shape[0] == 0 or boxes.cls is None:
+        return frame_corrected.copy()
+
+    allowed_classes = {0, 28}
+    cls_array = boxes.cls.cpu().numpy() if hasattr(boxes.cls, 'cpu') else np.array(boxes.cls)
+    # 用 NumPy 過濾索引
+    filtered_indices = np.where(np.isin(cls_array, list(allowed_classes)))[0]
+
+    if filtered_indices.size == 0:
+        return frame_corrected.copy()
+
+    # 過濾 boxes 資料 (先轉 numpy，確保可索引)
+    def safe_index(attr):
+        if attr is None:
+            return None
+        arr = attr.cpu().numpy() if hasattr(attr, 'cpu') else np.array(attr)
+        return arr[filtered_indices]
+
+    filtered_conf = safe_index(boxes.conf)
+    filtered_cls = safe_index(boxes.cls)
+    filtered_id = safe_index(boxes.id) if hasattr(boxes, 'id') else None
+    filtered_data = safe_index(boxes.data)
+
+    if filtered_data is None or filtered_data.shape[0] == 0:
+        print("Invalid or missing data tensor")
+        return frame_corrected.copy()
+
+    img = result.orig_img.copy()
+    for i in range(filtered_data.shape[0]):
+        try:
+            x1, y1, x2, y2 = map(int, filtered_data[i, :4])
+        except Exception as e:
+            print(f"Failed to extract box coordinates at index {i}: {e}")
+            continue
+
+        cls_id = int(filtered_cls[i]) if filtered_cls is not None else -1
+        track_id = int(filtered_id[i]) if filtered_id is not None else -1
+        label = f'{names[cls_id]} ID:{track_id}' if track_id >= 0 else f'{names[cls_id]}' if cls_id >= 0 else 'Unknown'
+        color = colors.get(cls_id, (0, 255, 0))
+        img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history, track_box_history)
 
     return img
 
