@@ -34,7 +34,8 @@ from utils.segmentor_trt import process_frame
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
+    parser.add_argument("--export", type=str, default=False, help="Export .pt to .engine")
+    parser.add_argument("--model", type=str, required=True, default="yolo11m-seg.pt", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
@@ -42,10 +43,14 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
 
-    if args.model.endswith(".pt"):
+    if args.export:
+        if not args.model.endswith(".pt"):  
+            raise NotImplementedError
         pt_model = YOLO(args.model)        
-        pt_model.export(format="engine")
-        model = YOLO("model/yolo11m-seg.engine")
+        pt_model.export(format="engine", int8=True, dynamic=True, half=False)
+
+    if args.model.endswith(".pt"):       
+        model = YOLO(args.model) 
     # elif args.model.endswith(".onnx"):
     #     model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
     elif args.model.endswith(".engine"):    # model/yolo11m-seg.engine

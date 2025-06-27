@@ -8,9 +8,6 @@ from utils.visualize import draw_box_and_mask, draw_box, draw_box_tracks
 
 def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
                   track_history, track_time_history, track_box_history):
-    import numpy as np
-    import cv2
-
     # 做投影矯正
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
 
