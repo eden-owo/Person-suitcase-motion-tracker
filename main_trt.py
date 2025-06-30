@@ -48,15 +48,16 @@ if __name__ == "__main__":
             raise NotImplementedError
         pt_model = YOLO(args.model)        
         pt_model.export(format="engine", int8=True, dynamic=True, half=False)
-
-    if args.model.endswith(".pt"):       
-        model = YOLO(args.model) 
-    # elif args.model.endswith(".onnx"):
-    #     model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
-    elif args.model.endswith(".engine"):    # model/yolo11m-seg.engine
-        model = YOLO(args.model) 
-    else: 
-        raise NotImplementedError
+        model = pt_model
+    else:
+        if args.model.endswith(".pt"):       
+            model = YOLO(args.model) 
+        # elif args.model.endswith(".onnx"):
+        #     model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
+        elif args.model.endswith(".engine"):    # model/yolo11m-seg.engine
+            model = YOLO(args.model) 
+        else: 
+            raise NotImplementedError
 
     if(args.rtsp):
         video = load_video(args.rtsp)
