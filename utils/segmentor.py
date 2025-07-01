@@ -28,7 +28,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
     if boxes.shape[0] == 0 or boxes.cls is None:
         return frame_corrected.copy()
 
-    allowed_classes = {0, 28}
+    allowed_classes = {28}
     cls_array = boxes.cls.cpu().numpy() if hasattr(boxes.cls, 'cpu') else np.array(boxes.cls)
     # 用 NumPy 過濾索引
     filtered_indices = np.where(np.isin(cls_array, list(allowed_classes)))[0]

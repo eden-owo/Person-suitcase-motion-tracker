@@ -51,8 +51,9 @@ if __name__ == "__main__":
         video = load_video(args.rtsp)
     else:
         # 讀取影片
-        video = load_video('./test/output_preprocess_1.mp4')
+        # video = load_video('./test/output_preprocess_1.mp4')
         # video = load_video('./test/772104971.057013.mp4')
+        video = load_video('./test/suitcase3.mp4')
         
     # 取得影片參數
     width, height, fps = get_video_properties(video)
@@ -63,7 +64,7 @@ if __name__ == "__main__":
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     colors = {
-        0: (255, 0, 0),     # person
+        # 0: (255, 0, 0),     # person
         28: (0, 255, 0),  # suitcase
     }
     

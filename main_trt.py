@@ -61,7 +61,8 @@ if __name__ == "__main__":
         video = load_video(args.rtsp)
     else:
         # 讀取影片
-        video = load_video('./test/output_preprocess_1.mp4')
+        video = load_video('./test/suitcase3.mp4')
+        # video = load_video('./test/output_preprocess_1.mp4')
         # video = load_video('./test/772104971.057013.mp4')
         
     # 取得影片參數
@@ -102,12 +103,12 @@ if __name__ == "__main__":
     while True:
         ret, frame = video.read()            
         if not ret:
-            # video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            # track_history = defaultdict(lambda: [])
-            # track_time_history = defaultdict(list)
-            # track_box_history = defaultdict(list)
-            # continue
-            break
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            track_history = defaultdict(lambda: [])
+            track_time_history = defaultdict(list)
+            track_box_history = defaultdict(list)
+            continue
+            # break
         
         start_time = time.time()
 

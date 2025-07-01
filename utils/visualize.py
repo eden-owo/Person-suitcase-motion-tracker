@@ -6,6 +6,10 @@ sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 
 import cv2
 import numpy as np
 import time
+import os
+from datetime import datetime
+
+last_alarm_minute = None  # 放在主程式一開始的位置，保持紀錄
 
 def draw_box_and_mask(img, box, mask, label, color):
     if not isinstance(img, np.ndarray):
@@ -69,6 +73,8 @@ def draw_box(img, box, label, color):
     return img
 
 def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_history, track_box_history , max_len=20):
+    global last_alarm_minute 
+
     if not isinstance(img, np.ndarray):
         raise TypeError(f"img 必須是 numpy.ndarray，目前是 {type(img)}")
     
@@ -108,9 +114,9 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
     speed = compute_speed(track_history[track_id], track_time_history[track_id])
 
     # 畫移動軌跡
-    points = np.hstack(track_history[track_id]).astype(np.int32).reshape((-1, 1, 2))
-    if len(points) >= 2:
-        cv2.polylines(img, [points], isClosed=False, color=color, thickness=2)
+    # points = np.hstack(track_history[track_id]).astype(np.int32).reshape((-1, 1, 2))
+    # if len(points) >= 2:
+    #     cv2.polylines(img, [points], isClosed=False, color=color, thickness=2)
 
     # 顯示速度文字
     # speed_text = f"{speed:.2f} px/ms"
@@ -118,21 +124,34 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
 
     # 顯示移動狀態
     if speed < 0.005:
-        cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
-    elif speed > 0.10:
+        # cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)
+        return img
+    elif speed > 0.03:
         # is_speed_text = f"moving"
         # cv2.putText(img, is_speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
         speed_text = f"{speed:.2f} px/ms"
         cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)    
         cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
+
+        # 判斷是否同一分鐘內已經丟過旗標
+        current_minute = datetime.now().strftime('%Y-%m-%d %H:%M')
+        if last_alarm_minute != current_minute:
+            alarm_dir = 'alarm'
+            os.makedirs(alarm_dir, exist_ok=True)
+            alarm_path = os.path.join(alarm_dir, 'fall_detect.txt')
+            with open(alarm_path, 'w') as f:
+                f.write(f"Suitcase fall detected at {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+            last_alarm_minute = current_minute
+
+        return img
     else:
         speed_text = f"{speed:.2f} px/ms"
         cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)    
         cv2.rectangle(img, (x1, y1), (x2, y2), color, 2)        
+        return img
+    
 
-    return img
-
-def compute_speed(history, time_stamps, window=20):
+def compute_speed(history, time_stamps, window=5):
     if len(history) < window or len(time_stamps) < window:
         return 0.0
 
