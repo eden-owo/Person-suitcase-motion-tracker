@@ -9,10 +9,10 @@ With calculating the velocity of people and suitcases, its primary goal is to de
 
 TensorRT is recommended for up to 30% faster computation.
 
-| GPU 型號           | With TensorRT | Without TensorRT |
-|:-------------------|:--------------|:-----------------|
-|GTX 1650 Laptop|22 FPS|16 FPS|
-|RTX 4060 Laptop||29 FPS|
+| GPU | With TensorRT | Without TensorRT |
+|:--|:--|:--|
+| GTX 1650 Laptop | 22 FPS | 16 FPS |
+| RTX 4060 Laptop || 29 FPS |
 
 
 🧱 Architecture
