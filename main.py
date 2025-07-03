@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
+# sys.path.insert(0, '/home/user/opencv/opencv/build_cuda/lib/python3')  # 根據你的實際路徑調整
 import cv2
 print("cv2 loaded from:", cv2.__file__)
 print("OpenCV version:", cv2.__version__)
