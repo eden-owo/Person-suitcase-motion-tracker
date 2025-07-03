@@ -10,7 +10,7 @@ With calculating the velocity of people and suitcases, its primary goal is to de
 TensorRT is recommended for up to 30% faster computation.
 
 | GPU | Model | With TensorRT (INT8) | Without TensorRT |
-|:--|:--|:--|:--|
+|:--:|:--:|:--:|:--:|
 | GTX 1650 Laptop | Yolo11m-seg | 22 FPS | 16 FPS |
 | RTX 4060 Laptop | Yolo11m-seg || 29 FPS |
 
