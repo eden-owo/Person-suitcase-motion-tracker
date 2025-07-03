@@ -9,6 +9,9 @@ TensorRT is recommended for up to 30% faster computation.
 
 <figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/demo.png" alt=""><figcaption></figcaption></figure>
 
+| GPU 型號           | With TensorRT | Without TensorRT |
+|:-------------------|:--------------|:-----------------|
+| GTX 1650 Laptop    | 20            | 16               |
 
 
 🧱 Architecture
