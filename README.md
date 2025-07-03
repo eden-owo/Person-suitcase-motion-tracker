@@ -11,7 +11,7 @@ TensorRT is recommended for up to 30% faster computation.
 
 | GPU 型號           | With TensorRT | Without TensorRT |
 |:-------------------|:--------------|:-----------------|
-| GTX 1650 Laptop    | 20 FPS            | 16 FPS              |
+| GTX 1650 Laptop    | 22 FPS            | 16 FPS              |
 
 
 🧱 Architecture
