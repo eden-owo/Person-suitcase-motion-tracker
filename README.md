@@ -5,9 +5,9 @@ This repository showcases instance segmentation of people and suitcases using YO
 
 With calculating the velocity of people and suitcases, its primary goal is to detect any instances of falls involving either.
 
-TensorRT is recommended for up to 30% faster computation.
-
 <figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/demo.png" alt=""><figcaption></figcaption></figure>
+
+TensorRT is recommended for up to 30% faster computation.
 
 | GPU 型號           | With TensorRT | Without TensorRT |
 |:-------------------|:--------------|:-----------------|
