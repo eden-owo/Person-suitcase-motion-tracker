@@ -7,7 +7,7 @@ import numpy as np
 from utils.visualize import draw_box_and_mask, draw_box, draw_box_tracks
 
 def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
-                  track_history, track_time_history, track_box_history):
+                  track_history, track_time_history, track_box_history, allowed_classes = {28}):
     # 做投影矯正
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
 
@@ -33,7 +33,6 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
     if boxes.shape[0] == 0 or boxes.cls is None:
         return frame_corrected.copy()
 
-    allowed_classes = {0, 28}
     cls_array = boxes.cls.cpu().numpy() if hasattr(boxes.cls, 'cpu') else np.array(boxes.cls)
     # 用 NumPy 過濾索引
     filtered_indices = np.where(np.isin(cls_array, list(allowed_classes)))[0]
