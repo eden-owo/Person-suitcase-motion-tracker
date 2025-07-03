@@ -5,7 +5,6 @@ from typing import List, Tuple, Union
 
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
-# sys.path.insert(0, '/home/user/opencv/opencv/build_cuda/lib/python3')  # 根據你的實際路徑調整
 import cv2
 print("cv2 loaded from:", cv2.__file__)
 print("OpenCV version:", cv2.__version__)
@@ -15,7 +14,6 @@ print("CUDA-enabled device count:", cv2.cuda.getCudaEnabledDeviceCount())
 
 import time
 import numpy as np
-# import onnxruntime as ort
 import torch
 import torch.nn.functional as F
 from collections import defaultdict
@@ -25,17 +23,16 @@ from ultralytics import YOLO
 from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
-
-# from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
-# from yolo.yolo_seg import YOLOv8Seg
+ 
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
 from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
-from utils.segmentor import process_frame
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model", type=str, required=True, default="yolo11n-seg.onnx", help="Path to ONNX model")
+    parser.add_argument("--export", type=str, default=False, help="Export .pt to .engine")
+    parser.add_argument("--model", type=str, required=True, default="yolo11m-seg.pt", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
@@ -43,18 +40,39 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", type=str)
     args = parser.parse_args()
 
-    # Run model as onnx
-    # model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
-    model = YOLO(args.model)
-    # model = YOLOv8Seg_TRT(args.model, conf=args.conf, iou=args.iou)
+    if args.export:
+        if not args.model.endswith(".pt"):  
+            raise NotImplementedError
+        pt_model = YOLO(args.model)        
+        pt_model.export(format="engine", int8=True, dynamic=True, half=False)
+        model = YOLO(args.model.replace(".pt",".engine"))  
+    else:
+        if args.model.endswith(".pt") and args.export is not True:       
+            from yolo.yolo_seg_onnx import YOLOv8Seg_onnx 
+            from utils.segmentor import process_frame
+            model = YOLO(args.model)
+        elif args.model.endswith(".pt") and args.export:
+            from yolo.yolo_seg_trt import YOLOv8Seg_TRT    
+            from utils.segmentor_trt import process_frame        
+            model = YOLO(args.model)          
+        elif args.model.endswith(".engine"):
+            from yolo.yolo_seg_trt import YOLOv8Seg_TRT    
+            from utils.segmentor_trt import process_frame        
+            model = YOLO(args.model)          
+        elif args.model.endswith(".onnx"):
+            from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
+            from utils.segmentor import process_frame
+            model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
+        else: 
+            raise NotImplementedError
 
     if(args.rtsp):
         video = load_video(args.rtsp)
     else:
         # 讀取影片
+        video = load_video('./test/suitcase3.mp4')
         # video = load_video('./test/output_preprocess_1.mp4')
         # video = load_video('./test/772104971.057013.mp4')
-        video = load_video('./test/suitcase3.mp4')
         
     # 取得影片參數
     width, height, fps = get_video_properties(video)
@@ -63,6 +81,8 @@ if __name__ == "__main__":
     output_resize_width = int(width * args.resize_ratio)
     output_resize_height = int(height * args.resize_ratio)
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
+
+    allowed_classes={28}
 
     colors = {
         # 0: (255, 0, 0),     # person
@@ -94,12 +114,12 @@ if __name__ == "__main__":
     while True:
         ret, frame = video.read()            
         if not ret:
-            # video.set(cv2.CAP_PROP_POS_FRAMES, 0)
-            # track_history = defaultdict(lambda: [])
-            # track_time_history = defaultdict(list)
-            # track_box_history = defaultdict(list)
-            # continue
-            break
+            video.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            track_history = defaultdict(lambda: [])
+            track_time_history = defaultdict(list)
+            track_box_history = defaultdict(list)
+            continue
+            # break
         
         start_time = time.time()
 
@@ -107,7 +127,7 @@ if __name__ == "__main__":
             # Resize frame on GPU
             frame_resized = resize_frame_gpu(frame, resize_size)
             
-            output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history, track_box_history)
+            output = process_frame(model, frame_resized, M, max_width, max_height, colors, track_history, track_time_history, track_box_history, allowed_classes)
 
             end_time = time.time()
             FPS = 1/(end_time - start_time)
