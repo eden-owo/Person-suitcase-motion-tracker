@@ -30,6 +30,15 @@ from utils.transform import RP
 from utils.visualize import draw_box_and_mask
 from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
 
+import platform
+import os
+
+def is_jetson():
+    return (
+        platform.machine() == 'aarch64' and
+        (os.path.exists('/etc/nv_tegra_release') or os.path.exists('/etc/nvidia-container-runtime'))
+    )
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -58,9 +67,17 @@ if __name__ == "__main__":
             from utils.segmentor_trt import process_frame        
             model = YOLO(args.model)          
         elif args.model.endswith(".engine"):
-            from yolo.yolo_seg_trt import YOLOv8Seg_TRT    
-            from utils.segmentor_trt import process_frame        
-            model = YOLO(args.model)          
+            if is_jetson():
+                print("Jetson device detected.")
+                from yolo.yolo_seg_trt_jetson import YOLOv8Seg_TRT
+            else:
+                from yolo.yolo_seg_trt import YOLOv8Seg_TRT
+            from utils.segmentor_trt import process_frame
+            model = YOLO(args.model)
+            
+            # from yolo.yolo_seg_trt import YOLOv8Seg_TRT    
+            # from utils.segmentor_trt import process_frame        
+            # model = YOLO(args.model)          
         elif args.model.endswith(".onnx"):
             from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
             from utils.segmentor import process_frame
