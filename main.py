@@ -68,7 +68,7 @@ if __name__ == "__main__":
             model = YOLO(args.model)          
         elif args.model.endswith(".engine"):
             if is_jetson():
-                print("Jetson device detected.")
+                print("Jetson device ")
                 from yolo.yolo_seg_trt_jetson import YOLOv8Seg_TRT
             else:
                 from yolo.yolo_seg_trt import YOLOv8Seg_TRT
