@@ -71,9 +71,10 @@ if __name__ == "__main__":
                 print("Jetson device detected.")
                 breakpoint()
                 from yolo.yolo_seg_trt_jetson import YOLOv8Seg_TRT_Jetson
+                from utils.segmentor_trt_jetson import process_frame
             else:
                 from yolo.yolo_seg_trt import YOLOv8Seg_TRT
-            from utils.segmentor_trt import process_frame
+                from utils.segmentor_trt import process_frame
             model = YOLO(args.model)
             
             # from yolo.yolo_seg_trt import YOLOv8Seg_TRT    
