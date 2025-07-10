@@ -5,7 +5,7 @@ import numpy as np
 import cv2
 
 
-class YOLOv8Seg_TRT:
+class YOLOv8Seg_TRT_Jetson:
     def __init__(self, engine_path, conf=0.3, iou=0.7):
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.conf = conf
