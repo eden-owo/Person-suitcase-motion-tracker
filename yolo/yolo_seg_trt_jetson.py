@@ -1,16 +1,17 @@
 import tensorrt as trt
-import pycuda.driver as cuda_driver
 import pycuda.driver as cuda
-import pycuda.autoinit
 import numpy as np
 import cv2
 
+cuda.init()
 
 class YOLOv8Seg_TRT_Jetson:
     def __init__(self, engine_path, conf=0.3, iou=0.7):
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.conf = conf
         self.iou = iou
+        self.device = cuda.Device(0)
+        self.cuda_context = self.device.make_context()
 
         # 讀取 engine
         with open(engine_path, 'rb') as f, trt.Runtime(self.logger) as runtime:
@@ -116,14 +117,11 @@ class YOLOv8Seg_TRT_Jetson:
         input_tensor = self.preprocess(image)
         cuda.memcpy_htod(self.d_input, input_tensor)
 
-        # ✅ 在推論前 push context
-        cuda_driver.Context.push()
+        self.cuda_context.push()
         try:
-            # 推論
             self.context.execute_v2(self.bindings)
         finally:
-            # ✅ 推論後立刻 pop 避免 context 泡沫運作
-            cuda_driver.Context.pop()
+            self.cuda_context.pop()
 
         host_outputs = []
         for shape, d_out in zip(self.output_shapes, self.d_outputs):
@@ -132,3 +130,7 @@ class YOLOv8Seg_TRT_Jetson:
             host_outputs.append(h_out)
 
         return self.postprocess(host_outputs, image.shape[:2])
+
+    def __del__(self):
+        if hasattr(self, "cuda_context"):
+            self.cuda_context.detach()
