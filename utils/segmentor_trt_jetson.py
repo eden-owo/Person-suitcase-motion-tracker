@@ -69,7 +69,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
         color = colors.get(cls_id, (0, 255, 0))
         img = draw_box_tracks(img, (x1, y1, x2, y2), label, color, track_id, track_history, track_time_history, track_box_history)
 
-    return frame_corrected
+    return img
 
 
 def process_face(model, frame):
