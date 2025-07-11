@@ -19,7 +19,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
         return frame_corrected.copy()
 
     result = results[0]  # 處理第一張圖片結果
-    breakpoint()
+
     if not (hasattr(result, 'boxes') and result.boxes and
             hasattr(result.boxes, 'data') and
             hasattr(result, 'masks') and result.masks and
