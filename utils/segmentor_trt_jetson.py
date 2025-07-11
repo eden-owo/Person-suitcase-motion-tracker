@@ -12,7 +12,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
 
     # TensorRT 推論
-    results = model(frame_corrected)
+    results = model.track(frame_corrected)
 
     if not results or results[0] is None:
         print("No results from model.track()")
