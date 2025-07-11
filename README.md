@@ -13,7 +13,7 @@ TensorRT is recommended for up to 30% faster computation.
 |:--:|:--:|:--:|:--:|
 | GTX 1650 Laptop | Yolo11m-seg | 22 FPS | 16 FPS |
 | RTX 4060 Laptop | Yolo11m-seg || 29 FPS |
-| Jetson orin nano super | Yolo11m-seg |||
+| Jetson orin nano super | Yolo11m-seg | 24 FPS | 12 FPS |
 
 
 🧱 Architecture
