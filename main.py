@@ -129,7 +129,7 @@ if __name__ == "__main__":
     track_box_history = defaultdict(list)
     total_average_fps=0
     total_frame=0
-    total_fps=0
+    total_FPS=0
 
     while True:
         ret, frame = video.read()            
