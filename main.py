@@ -155,8 +155,7 @@ if __name__ == "__main__":
             total_frame = total_frame + 1
             total_average_fps = total_FPS / total_frame
             # print(f"Frame latency: {latency_ms:.2f} ms")
-            print(f"FPS: {FPS:.2f}", end='\r')
-            print(f"FPS: {total_average_fps:.2f}", end='\r')
+            print(f"FPS: {FPS:.2f} | Avg FPS: {total_average_fps:.2f}", end='\r')
             if output is not None and output.size > 0:
                 out.write(output)
                 cv2.imshow("Segmented Image", output)
