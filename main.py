@@ -127,6 +127,9 @@ if __name__ == "__main__":
     track_history = defaultdict(lambda: [])
     track_time_history = defaultdict(list)
     track_box_history = defaultdict(list)
+    total_average_fps=0
+    total_frame=0
+    total_fps=0
 
     while True:
         ret, frame = video.read()            
@@ -148,8 +151,12 @@ if __name__ == "__main__":
 
             end_time = time.time()
             FPS = 1/(end_time - start_time)
+            total_FPS = total_FPS + FPS
+            total_frame = total_frame + 1
+            total_average_fps = total_FPS / total_frame
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f}", end='\r')
+            print(f"FPS: {total_average_fps:.2f}", end='\r')
             if output is not None and output.size > 0:
                 out.write(output)
                 cv2.imshow("Segmented Image", output)
