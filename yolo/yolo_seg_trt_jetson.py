@@ -1,4 +1,5 @@
 import tensorrt as trt
+import pycuda.driver as cuda_driver
 import pycuda.driver as cuda
 import pycuda.autoinit
 import numpy as np
@@ -115,8 +116,14 @@ class YOLOv8Seg_TRT_Jetson:
         input_tensor = self.preprocess(image)
         cuda.memcpy_htod(self.d_input, input_tensor)
 
-        # 推論（若 context 無效需 rebuild engine）
-        self.context.execute_v2(self.bindings)
+        # ✅ 在推論前 push context
+        cuda_driver.Context.push()
+        try:
+            # 推論
+            self.context.execute_v2(self.bindings)
+        finally:
+            # ✅ 推論後立刻 pop 避免 context 泡沫運作
+            cuda_driver.Context.pop()
 
         host_outputs = []
         for shape, d_out in zip(self.output_shapes, self.d_outputs):

@@ -10,7 +10,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
                   track_history, track_time_history, track_box_history, allowed_classes = {28}):
     # 做投影矯正
     frame_corrected = cv2.warpPerspective(frame, transform_matrix, (int(max_width), int(max_height)))
-
+    breakpoint()
     # TensorRT 推論
     results = model(frame_corrected)
 
