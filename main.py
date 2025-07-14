@@ -14,6 +14,7 @@ print("OpenCV version:", cv2.__version__)
 # print(cv2.getBuildInformation())
 print("CUDA-enabled device count:", cv2.cuda.getCudaEnabledDeviceCount())
 
+import threading
 import time
 import numpy as np
 import torch
@@ -38,7 +39,6 @@ def is_jetson():
         platform.machine() == 'aarch64' and
         (os.path.exists('/etc/nv_tegra_release') or os.path.exists('/etc/nvidia-container-runtime'))
     )
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -130,6 +130,7 @@ if __name__ == "__main__":
     total_average_fps=0
     total_frame=0
     total_FPS=0
+    tracker_threads = []
 
     while True:
         ret, frame = video.read()            
