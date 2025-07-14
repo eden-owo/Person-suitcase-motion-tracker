@@ -91,18 +91,6 @@ if __name__ == "__main__":
         # video = load_video('./test/output_preprocess_1.mp4')
         # video = load_video('./test/772104971.057013.mp4')
     
-    if args.record:
-        # 取得影片參數
-        width, height, fps = get_video_properties(video)
-
-        # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
-        output_resize_width = int(width * args.resize_ratio)
-        output_resize_height = int(height * args.resize_ratio)
-
-        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-        out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (int(max_width), int(max_height)))
-
-    
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     allowed_classes={28}
@@ -125,6 +113,17 @@ if __name__ == "__main__":
     # M = RP.photo_PR_roi(frame_resized)
     ## 建立已封裝物件
     M, max_width, max_height = RP().photo_PR_roi(frame_resized)
+
+    if args.record:
+        # 取得影片參數
+        width, height, fps = get_video_properties(video)
+
+        # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
+        output_resize_width = int(width * args.resize_ratio)
+        output_resize_height = int(height * args.resize_ratio)
+
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (int(max_width), int(max_height)))
     
     # Store the track history
     track_history = defaultdict(lambda: [])
