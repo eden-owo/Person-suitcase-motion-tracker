@@ -70,7 +70,7 @@ if __name__ == "__main__":
         elif args.model.endswith(".engine"):
             if is_jetson():
                 print("Jetson device detected.")
-                from utils.segmentor_trt_jetson import process_frame
+                from utils.segmentor_trt import process_frame
             else:
                 from utils.segmentor_trt import process_frame
             from utils.segmentor_trt import process_frame
