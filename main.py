@@ -49,6 +49,7 @@ if __name__ == "__main__":
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     parser.add_argument("--resize_ratio", type=float, default=1.0, help="Video resize ratio")
     parser.add_argument("--rtsp", type=str)
+    parser.add_argument("--record", type=str, default=True, help="Record video")
     args = parser.parse_args()
 
     if args.export:
@@ -82,20 +83,26 @@ if __name__ == "__main__":
         else: 
             raise NotImplementedError
 
-    if(args.rtsp):
+    if args.rtsp:
         video = load_video(args.rtsp)
     else:
         # 讀取影片
         video = load_video('./test/suitcase3.mp4')
         # video = load_video('./test/output_preprocess_1.mp4')
         # video = load_video('./test/772104971.057013.mp4')
-        
-    # 取得影片參數
-    width, height, fps = get_video_properties(video)
+    
+    if args.record:
+        # 取得影片參數
+        width, height, fps = get_video_properties(video)
 
-    # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
-    output_resize_width = int(width * args.resize_ratio)
-    output_resize_height = int(height * args.resize_ratio)
+        # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
+        output_resize_width = int(width * args.resize_ratio)
+        output_resize_height = int(height * args.resize_ratio)
+
+        fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (int(max_width), int(max_height)))
+
+    
     resize_size = (output_resize_width, output_resize_height)  # resize的尺寸(寬,高)  
 
     allowed_classes={28}
@@ -118,9 +125,6 @@ if __name__ == "__main__":
     # M = RP.photo_PR_roi(frame_resized)
     ## 建立已封裝物件
     M, max_width, max_height = RP().photo_PR_roi(frame_resized)
-
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
-    out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (int(max_width), int(max_height)))
     
     # Store the track history
     track_history = defaultdict(lambda: [])
@@ -155,8 +159,10 @@ if __name__ == "__main__":
             total_average_fps = total_FPS / total_frame
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f} | Avg FPS: {total_average_fps:.2f}", end='\r')
+            
             if output is not None and output.size > 0:
-                out.write(output)
+                if args.record:
+                    out.write(output)
                 cv2.imshow("Segmented Image", output)
             else:
                 print("Skipped empty frame (write/show).")
@@ -168,6 +174,6 @@ if __name__ == "__main__":
             break            
 
     video.release()
-    out.release()  # 釋放 VideoWriter
+    if args.record: out.release()  # 釋放 VideoWriter
 
     cv2.destroyAllWindows() 
