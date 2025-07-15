@@ -134,7 +134,7 @@ def run_rtsp(args):
         print("Jetson device detected.")
         gst_pipeline = (
             f"rtspsrc location={args.rtsp} latency=100 ! "
-            f"rtph264depay ! h264parse ! omxh264dec ! "
+            f"rtph264depay ! h264parse ! nvv4l2decoder ! "
             f"nvvidconv ! video/x-raw,format=BGRx ! videoconvert ! "
             f"video/x-raw,format=BGR ! appsink drop=1"
         )
