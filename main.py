@@ -28,6 +28,7 @@ from utils.transform import RP
 from utils.visualize import draw_box_and_mask
 from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
 from utils.run_local_video import run_local_video
+from utils.run_rtsp import run_rtsp
 
 import ultralytics.utils.ops as ops
 from ultralytics import YOLO
