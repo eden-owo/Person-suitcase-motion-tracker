@@ -140,12 +140,20 @@ def run_rtsp(args):
         )
 
         video = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+        if not video.isOpened():
+            raise RuntimeError(f"Failed to open video stream: {args.rtsp}")
     else:
         video = cv2.VideoCapture(args.rtsp)
 
     width, height, fps = get_video_properties(video)
 
+    if width == 0 or height == 0:
+        raise ValueError(f"Invalid video dimensions: width={width}, height={height}")
+
     ret, frame = video.read()
+    if not ret or frame is None:
+        raise RuntimeError("Failed to read first frame from video.")
+
     # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
     resize_size = (int(width * args.resize_ratio), int(height * args.resize_ratio))
     # Upload to GPU and resize      
