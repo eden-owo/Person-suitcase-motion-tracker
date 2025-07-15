@@ -130,7 +130,18 @@ def Display(args, width, height, fps,  M, max_width, max_height):
 
 
 def run_rtsp(args):
-    video = cv2.VideoCapture(args.rtsp)
+    if is_jetson():
+        print("Jetson device detected.")
+        gst_pipeline = (
+            f"rtspsrc location={args.rtsp} latency=100 ! "
+            f"rtph264depay ! h264parse ! omxh264dec ! "
+            f"nvvidconv ! video/x-raw,format=BGRx ! videoconvert ! "
+            f"video/x-raw,format=BGR ! appsink drop=1"
+        )
+
+        video = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
+    else:
+        video = cv2.VideoCapture(args.rtsp)
 
     width, height, fps = get_video_properties(video)
 
