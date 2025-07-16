@@ -41,7 +41,8 @@ def Receive(args, width, height, fps, resize_size, video):
             time.sleep(0.01)
             continue
         try:
-            frame_resized = resize_frame_gpu(frame, resize_size)
+            # frame_resized = resize_frame_gpu(frame, resize_size)
+            frame_resized = cv2.resize(frame, resize_size)
 
             # 如果 queue 滿了，就丟掉舊的 frame（保留最新的）
             if q.full():
@@ -115,7 +116,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
             total_FPS += FPS
             total_frame += 1
             # print(f"Frame latency: {latency_ms:.2f} ms")
-            print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f}", end='\r')
+            print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f} | {type(model)}", end='\r')
             # cv2.imshow("Segmented Image", output)
            
         if cv2.waitKey(1) & 0xFF == ord('q'): break
@@ -161,7 +162,8 @@ def run_rtsp(args):
     # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
     resize_size = (int(width * args.resize_ratio), int(height * args.resize_ratio))
     # Upload to GPU and resize      
-    frame_resized = resize_frame_gpu(frame, resize_size)
+    # frame_resized = resize_frame_gpu(frame, resize_size)
+    frame_resized = cv2.resize(frame, resize_size)
 
     # 使用者選點並取得矯正圖與原始四點
     # M = RP.photo_PR_roi(frame_resized)
