@@ -34,16 +34,32 @@ def is_jetson():
 def Receive(args, width, height, fps, resize_size):
     print("start Receive")
     video = cv2.VideoCapture(args.rtsp)
-    ret, frame = video.read() 
+    
 
-    frame_resized = resize_frame_gpu(frame, resize_size)
-    q.put(frame_resized)
-    print("1")
-    while ret:
-        ret, frame = video.read()
-        frame_resized = resize_frame_gpu(frame, resize_size)
-        q.put(frame_resized)
-        print("2")
+    while True:
+        ret, frame = video.read() 
+        if not ret:
+            print("⚠️ 無法讀取 frame，跳過")
+            time.sleep(0.01)
+            continue
+        try:
+            frame_resized = resize_frame_gpu(frame, resize_size)
+
+            # 如果 queue 滿了，就丟掉舊的 frame（保留最新的）
+            if q.full():
+                dropped = q.get()  # 或者直接 pass，視你是否需要處理掉舊幀
+                print("⚠️ Queue 滿了，已丟掉一幀")
+                print("-1")
+
+            q.put_nowait(frame_resized)
+            print("1")
+            print("📥 Frame 放入 Queue")
+
+        except cv2.error as e:
+            print(f"❌ Resize 發生錯誤: {e}")
+        except Exception as e:
+            print(f"❌ 其他錯誤: {e}")
+       
 
 def Display(args, width, height, fps,  M, max_width, max_height):
     if args.export:
