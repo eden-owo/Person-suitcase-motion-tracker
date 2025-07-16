@@ -79,7 +79,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
                 print("Jetson device detected.")
             from yolo.yolo_seg_trt import YOLOv8Seg_TRT 
             from utils.segmentor_trt import process_frame
-            model = YOLO(args.model)          
+            model = YOLOv8Seg_TRT_Jetson(args.model)          
   
         elif args.model.endswith(".onnx"):
             from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
