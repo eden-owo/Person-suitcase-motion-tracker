@@ -39,7 +39,7 @@ def Receive(args, width, height, fps, resize_size):
     while True:
         ret, frame = video.read() 
         if not ret:
-            print("⚠️ 無法讀取 frame，跳過")
+            # print("⚠️ 無法讀取 frame，跳過")
             time.sleep(0.01)
             continue
         try:
@@ -48,10 +48,10 @@ def Receive(args, width, height, fps, resize_size):
             # 如果 queue 滿了，就丟掉舊的 frame（保留最新的）
             if q.full():
                 dropped = q.get()  # 或者直接 pass，視你是否需要處理掉舊幀
-                print("⚠️ Queue 滿了，已丟掉一幀")
+                # print("⚠️ Queue 滿了，已丟掉一幀")
 
             q.put_nowait(frame_resized)
-            print("📥 Frame 放入 Queue")
+            # print("📥 Frame 放入 Queue")
 
         except cv2.error as e:
             print(f"❌ Resize 發生錯誤: {e}")
@@ -112,7 +112,6 @@ def Display(args, width, height, fps,  M, max_width, max_height):
         if not q.empty():
             frame = q.get()
             # cv2.imshow("frame1", frame)
-            print("3")
             start_time = time.time()
             output = process_frame(model, frame, M, max_width, max_height, colors,
                         track_history, track_time_history, track_box_history, allowed_classes)
@@ -122,8 +121,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f}", end='\r')
             cv2.imshow("Segmented Image", output)
-            print("4")
-
+           
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
         # if output is not None and output.size > 0:
