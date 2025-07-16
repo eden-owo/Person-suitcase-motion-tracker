@@ -64,7 +64,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
             raise NotImplementedError
         pt_model = YOLO(args.model)        
         pt_model.export(format="engine", int8=True, dynamic=True, half=False)
-        model = YOLO(args.model.replace(".pt",".engine"))  
+        return
     else:
         if args.model.endswith(".pt") and args.export is not True:       
             from yolo.yolo_seg_onnx import YOLOv8Seg_onnx 
