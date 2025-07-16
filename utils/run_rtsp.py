@@ -172,7 +172,13 @@ def run_rtsp(args):
 
     p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size, video), daemon=True)
     p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height), daemon=True)
-    p1.start()
-    p2.start()
-    p1.join()
-    p2.join()
+    
+    if args.export:
+        p1.start()      
+        p1.join()      
+
+    else: 
+        p1.start()   
+        p2.start()
+        p1.join()
+        p2.join()
