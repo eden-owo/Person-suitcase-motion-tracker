@@ -43,8 +43,7 @@ def Receive(args, width, height, fps, resize_size):
             time.sleep(0.01)
             continue
         try:
-            # frame_resized = resize_frame_gpu(frame, resize_size)
-            frame_resized = cv2.resize(frame, resize_size)
+            frame_resized = resize_frame_gpu(frame, resize_size)
 
             # 如果 queue 滿了，就丟掉舊的 frame（保留最新的）
             if q.full():
@@ -139,10 +138,11 @@ def run_rtsp(args):
     if is_jetson():
         print("Jetson device detected.")
         gst_pipeline = (
-            f"rtspsrc location={args.rtsp} latency=100 ! "
+            f"rtspsrc location={args.rtsp} latency=50 drop-on-latency=true ! "
             f"rtph264depay ! h264parse ! nvv4l2decoder ! "
+            f"nvvidconv ! video/x-raw(memory:NVMM),format=NV12 ! "
             f"nvvidconv ! video/x-raw,format=BGRx ! videoconvert ! "
-            f"video/x-raw,format=BGR ! appsink drop=1"
+            f"video/x-raw,format=BGR ! appsink drop=true max-buffers=1 sync=false"
         )
 
         video = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
@@ -163,8 +163,7 @@ def run_rtsp(args):
     # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
     resize_size = (int(width * args.resize_ratio), int(height * args.resize_ratio))
     # Upload to GPU and resize      
-    # frame_resized = resize_frame_gpu(frame, resize_size)
-    frame_resized = cv2.resize(frame, resize_size)
+    frame_resized = resize_frame_gpu(frame, resize_size)
 
     # 使用者選點並取得矯正圖與原始四點
     # M = RP.photo_PR_roi(frame_resized)
