@@ -78,9 +78,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
         elif args.model.endswith(".engine"):
             if is_jetson():
                 print("Jetson device detected.")
-                from utils.segmentor_trt import process_frame
-            else:
-                from utils.segmentor_trt import process_frame
+            from yolo.yolo_seg_trt import YOLOv8Seg_TRT 
             from utils.segmentor_trt import process_frame
             model = YOLO(args.model)          
   
