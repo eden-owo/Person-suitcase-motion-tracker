@@ -63,7 +63,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
         if not args.model.endswith(".pt"):  
             raise NotImplementedError
         pt_model = YOLO(args.model)        
-        pt_model.export(format="engine", device=0, half=True, dynamic=False, int8=False)
+        pt_model.export(format="engine", device=0, half=True, dynamic=False, int8=True)
 
         return
     else:
