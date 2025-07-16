@@ -31,10 +31,8 @@ def is_jetson():
         (os.path.exists('/etc/nv_tegra_release') or os.path.exists('/etc/nvidia-container-runtime'))
     )
 
-def Receive(args, width, height, fps, resize_size):
-    print("start Receive")
-    video = cv2.VideoCapture(args.rtsp)
-    
+def Receive(args, width, height, fps, resize_size, video):
+    print("start Receive")  
 
     while True:
         ret, frame = video.read() 
@@ -170,7 +168,7 @@ def run_rtsp(args):
     ## 建立已封裝物件
     M, max_width, max_height = RP().photo_PR_roi(frame_resized)
 
-    p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size), daemon=True)
+    p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size, video), daemon=True)
     p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height), daemon=True)
     p1.start()
     p2.start()
