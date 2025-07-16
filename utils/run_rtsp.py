@@ -120,7 +120,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
             total_frame += 1
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f}", end='\r')
-            cv2.imshow("Segmented Image", output)
+            # cv2.imshow("Segmented Image", output)
            
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
