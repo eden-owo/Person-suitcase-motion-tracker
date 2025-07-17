@@ -119,10 +119,12 @@ def run_local_video(args):
         # print(f"Frame latency: {latency_ms:.2f} ms")
         print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f}", end='\r')
 
-        if output is not None and output.size > 0:
-            if out:
-                out.write(output)
+        if args.view:
             cv2.imshow("Segmented Image", output)
+
+        if out:            
+            if output is not None and output.size > 0:    
+                out.write(output)
 
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break

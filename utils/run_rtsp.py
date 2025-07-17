@@ -80,7 +80,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
                 print("Jetson device detected.")
             from yolo.yolo_seg_trt import YOLOv8Seg_TRT
             from utils.segmentor_trt import process_frame
-            model = YOLOv8Seg_TRT(args.model)          
+            model = YOLO(args.model)          
   
         elif args.model.endswith(".onnx"):
             from yolo.yolo_seg_onnx import YOLOv8Seg_onnx
@@ -109,7 +109,6 @@ def Display(args, width, height, fps,  M, max_width, max_height):
     while True:
         if not q.empty():
             frame = q.get()
-            # cv2.imshow("frame1", frame)
             start_time = time.time()
             output = process_frame(model, frame, M, max_width, max_height, colors,
                         track_history, track_time_history, track_box_history, allowed_classes)
@@ -118,20 +117,21 @@ def Display(args, width, height, fps,  M, max_width, max_height):
             total_frame += 1
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f} | {type(model)}", end='\r')
-            # cv2.imshow("Segmented Image", output)
+            if args.view:
+                cv2.imshow("Segmented Image", output)
            
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
-        # if output is not None and output.size > 0:
-        #     if out:
-        #         out.write(output)      
+        if out:            
+            if output is not None and output.size > 0:    
+                out.write(output)
 
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
-    # video.release()
-    # if out: out.release()
-    # cv2.destroyAllWindows()
+    video.release()
+    if out: out.release()
+    cv2.destroyAllWindows()
 
 
 def run_rtsp(args):

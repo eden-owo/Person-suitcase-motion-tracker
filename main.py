@@ -45,7 +45,8 @@ if __name__ == "__main__":
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     parser.add_argument("--resize_ratio", type=float, default=1.0, help="Video resize ratio")
     parser.add_argument("--rtsp", type=str)
-    parser.add_argument("--record", type=str, default=True, help="Record video")
+    parser.add_argument("--record", type=str, default=False, help="Record video")
+    parser.add_argument("--view", type=str, default=False, help="View visualization")
     args = parser.parse_args()
 
     if args.rtsp:
