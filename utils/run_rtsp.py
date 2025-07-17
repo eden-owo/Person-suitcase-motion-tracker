@@ -11,10 +11,11 @@ import time
 import os
 from collections import defaultdict
 import platform
+import numpy as np
  
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
-from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
+from utils.video_utils import load_video, get_video_properties, GpuResizer
 
 import ultralytics.utils.ops as ops
 from ultralytics import YOLO
@@ -31,7 +32,7 @@ def is_jetson():
         (os.path.exists('/etc/nv_tegra_release') or os.path.exists('/etc/nvidia-container-runtime'))
     )
 
-def Receive(args, width, height, fps, resize_size, video):
+def Receive(args, width, height, fps, resize_size, video, gpu_resizer):
     print("start Receive")  
 
     while True:
@@ -41,14 +42,15 @@ def Receive(args, width, height, fps, resize_size, video):
             time.sleep(0.01)
             continue
         try:
-            # frame_resized = resize_frame_gpu(frame, resize_size)
-            frame_resized = cv2.resize(frame, resize_size)
+            
+            frame_resized = gpu_resizer.resize(frame, resize_size)
+            # frame_resized = cv2.resize(frame, resize_size)
 
             # 如果 queue 滿了，就丟掉舊的 frame（保留最新的）
-            if q.full():
-                dropped = q.get()  # 或者直接 pass，視你是否需要處理掉舊幀
-                # print("⚠️ Queue 滿了，已丟掉一幀")
-
+            try:
+                q.get_nowait()  # 確保先丟最舊的，不會阻塞
+            except queue.Empty:
+                pass
             q.put_nowait(frame_resized)
             # print("📥 Frame 放入 Queue")
 
@@ -58,7 +60,7 @@ def Receive(args, width, height, fps, resize_size, video):
             print(f"❌ 其他錯誤: {e}")
        
 
-def Display(args, width, height, fps,  M, max_width, max_height):
+def Display(args, width, height, fps, M, max_width, max_height, resize_size):
     if args.export:
         if not args.model.endswith(".pt"):  
             raise NotImplementedError
@@ -87,10 +89,11 @@ def Display(args, width, height, fps,  M, max_width, max_height):
             from utils.segmentor import process_frame
             model = YOLOv8Seg_onnx(args.model, args.conf, args.iou)
         else: 
-            raise NotImplementedError
-
+            raise NotImplementedError  
+   
     if args.record:
         fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+        os.makedirs("test", exist_ok=True)
         out = cv2.VideoWriter("test/output.mp4", fourcc, fps, (int(max_width), int(max_height)))
     else:
         out = None
@@ -105,14 +108,21 @@ def Display(args, width, height, fps,  M, max_width, max_height):
     track_time_history = defaultdict(list)
     track_box_history = defaultdict(list)
     total_FPS = total_frame = 0
+    output = None
     
+    dummy_frame = np.zeros((resize_size[1], resize_size[0], 3), dtype=np.uint8)
+    _ = process_frame(model, dummy_frame, M, max_width, max_height, colors,
+                track_history, track_time_history, track_box_history, allowed_classes)    
     while True:
         if not q.empty():
             frame = q.get()
             start_time = time.time()
             output = process_frame(model, frame, M, max_width, max_height, colors,
                         track_history, track_time_history, track_box_history, allowed_classes)
-            FPS = 1 / (time.time() - start_time)
+            
+            duration = time.time() - start_time
+            FPS = 1.0 / duration if duration > 0 else 0
+            
             total_FPS += FPS
             total_frame += 1
             # print(f"Frame latency: {latency_ms:.2f} ms")
@@ -125,11 +135,7 @@ def Display(args, width, height, fps,  M, max_width, max_height):
         if out:            
             if output is not None and output.size > 0:    
                 out.write(output)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-    video.release()
+    
     if out: out.release()
     cv2.destroyAllWindows()
 
@@ -158,28 +164,46 @@ def run_rtsp(args):
 
     ret, frame = video.read()
     if not ret or frame is None:
-        raise RuntimeError("Failed to read first frame from video.")
+        attempts = 0
+        while attempts < 10:
+            ret, frame = video.read()
+            if ret and frame is not None:
+                break
+            print("⚠️ Frame 讀取失敗，重試中…")
+            time.sleep(0.2)
+            attempts += 1
+        else:
+            raise RuntimeError("❌ 無法讀取首幀")
 
     # 輸出影片設定（請根據resize調整尺寸，要特別注意尺寸是 (width, height)）
     resize_size = (int(width * args.resize_ratio), int(height * args.resize_ratio))
+    
     # Upload to GPU and resize      
-    # frame_resized = resize_frame_gpu(frame, resize_size)
-    frame_resized = cv2.resize(frame, resize_size)
+    gpu_resizer = GpuResizer()
+    frame_resized = gpu_resizer.resize(frame, resize_size)
+    # frame_resized = cv2.resize(frame, resize_size)
 
     # 使用者選點並取得矯正圖與原始四點
     # M = RP.photo_PR_roi(frame_resized)
     ## 建立已封裝物件
     M, max_width, max_height = RP().photo_PR_roi(frame_resized)
-
-    p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size, video), daemon=True)
-    p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height), daemon=True)
     
-    if args.export:
-        p1.start()      
-        p1.join()      
+    p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size, video, gpu_resizer))
+    p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height, resize_size))
+    
+    try: 
+        if args.export:
+            p1.start()      
+            p1.join()      
 
-    else: 
-        p1.start()   
-        p2.start()
-        p1.join()
-        p2.join()
+        else: 
+            p1.start()   
+            p2.start()
+            p1.join()
+            p2.join()
+    except KeyboardInterrupt:
+        print("\n⛔️ 手動中斷程式 (Ctrl+C)")
+    finally:
+            print("🧹 清理資源並退出")
+            video.release()
+            cv2.destroyAllWindows()

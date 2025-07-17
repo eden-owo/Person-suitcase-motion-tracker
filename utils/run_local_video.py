@@ -13,7 +13,7 @@ import platform
  
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
-from utils.video_utils import load_video, resize_frame_gpu, get_video_properties
+from utils.video_utils import load_video, GpuResizer, get_video_properties
 
 import ultralytics.utils.ops as ops
 from ultralytics import YOLO
@@ -81,7 +81,9 @@ def run_local_video(args):
         return
 
     # Upload to GPU and resize      
-    frame_resized = resize_frame_gpu(first_frame, resize_size)
+    gpu_resizer = GpuResizer()
+    frame_resized = gpu_resizer.resize(frame, resize_size)
+    # frame_resized = cv2.resize(frame, resize_size)
 
     # 使用者選點並取得矯正圖與原始四點
     # M = RP.photo_PR_roi(frame_resized)
@@ -110,7 +112,7 @@ def run_local_video(args):
             continue
 
         start_time = time.time()
-        frame_resized = resize_frame_gpu(frame, resize_size)
+        frame_resized = gpu_resizer.resize(frame, resize_size)
         output = process_frame(model, frame_resized, M, max_width, max_height, colors,
                                track_history, track_time_history, track_box_history, allowed_classes)
         FPS = 1 / (time.time() - start_time)

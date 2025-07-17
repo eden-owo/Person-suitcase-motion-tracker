@@ -13,9 +13,12 @@ def get_video_properties(cap):
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     return width, height, fps
-
-def resize_frame_gpu(frame, size):
-    gpu_mat = cv2.cuda_GpuMat()
-    gpu_mat.upload(frame)
-    resized_gpu = cv2.cuda.resize(gpu_mat, size)
-    return resized_gpu.download()
+   
+class GpuResizer:
+    def __init__(self):
+        self.gpu_mat = cv2.cuda_GpuMat()
+    def resize(self, frame, size):
+        self.gpu_mat.upload(frame)
+        resized_gpu = cv2.cuda.resize(self.gpu_mat, size)
+        return resized_gpu.download()
+        
