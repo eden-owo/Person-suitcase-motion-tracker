@@ -82,7 +82,7 @@ def run_local_video(args):
 
     # Upload to GPU and resize      
     gpu_resizer = GpuResizer()
-    frame_resized = gpu_resizer.resize(frame, resize_size)
+    frame_resized = gpu_resizer.resize(first_frame, resize_size)
     # frame_resized = cv2.resize(frame, resize_size)
 
     # 使用者選點並取得矯正圖與原始四點
