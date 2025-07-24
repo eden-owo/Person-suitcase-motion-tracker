@@ -29,22 +29,18 @@ import queue
 q = queue.Queue(maxsize=20)  # 定義 queue，最大容量可依需求調整
 
 app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "✅ Flask 正常運作"
+
 @app.route('/video_feed')
 def video_feed():
     return Response("這裡是影片串流內容")
 
-#def video_feed():
-#    print("Client connected to /video_feed")
-#    return Response(Display(), mimetype='multipart/x-mixed-replace; boundary=frame')
-
 def start_flask():
-    print("🌐 Flask thread 正在啟動")
-    app.run(
-        host='0.0.0.0',
-        port=5000,
-        debug=False,
-        use_reloader=False
-    )
+    print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
+    app.run(host='0.0.0.0', port=5000)
     
 
 def is_jetson():
@@ -167,7 +163,8 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
     cv2.destroyAllWindows()
 
 
-def run_rtsp(args):      
+def run_rtsp(args):    
+ 
     if is_jetson():
         print("Jetson device detected.")
         gst_pipeline = (
@@ -219,21 +216,19 @@ def run_rtsp(args):
     p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height, resize_size))
     
     
-    flask_thread = threading.Thread(target=start_flask, kwargs={'host': '0.0.0.0', 'port': 5000, 'debug': False, 'use_reloader': False})
+    flask_thread = threading.Thread(target=start_flask)
     flask_thread.daemon = True    
-    flask_thread.start()
+    
     try: 
 
         if args.export:
-            p1.start()                   
-            flask_thread.start()    
+            p1.start()                     
             p1.join() 
-
+            #flask_thread.start()
         else: 
             p1.start()   
             p2.start()
-            flask_thread.start() 
-            
+            #flask_thread.start()
             p1.join()
             p2.join()
 

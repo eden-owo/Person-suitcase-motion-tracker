@@ -21,6 +21,24 @@ from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
+import threading
+from flask import Flask, Response 
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "✅ Flask 正常運作"
+
+@app.route('/video_feed')
+def video_feed():
+    return Response("這裡是影片串流內容")
+
+def start_flask():
+    print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
+    app.run(host='0.0.0.0', port=5000)
+    
+
 def is_jetson():
     return (
         platform.machine() == 'aarch64' and
@@ -102,6 +120,9 @@ def run_local_video(args):
     track_box_history = defaultdict(list)
     total_FPS = total_frame = 0
 
+    flask_thread = threading.Thread(target=start_flask)
+    flask_thread.daemon = True    
+    flask_thread.start()
     while True:
         ret, frame = video.read()
         if not ret:
@@ -121,9 +142,9 @@ def run_local_video(args):
         # print(f"Frame latency: {latency_ms:.2f} ms")
         print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f}", end='\r')
 
-        if args.view:
-            cv2.imshow("Segmented Image", output)
-
+        # if args.view:
+        #     cv2.imshow("Segmented Image", output)       
+        
         if out:            
             if output is not None and output.size > 0:    
                 out.write(output)
