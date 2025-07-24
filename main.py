@@ -47,6 +47,7 @@ if __name__ == "__main__":
     parser.add_argument("--rtsp", type=str)
     parser.add_argument("--record", type=str, default=False, help="Record video")
     parser.add_argument("--view", type=str, default=False, help="View visualization")
+    parser.add_argument('--web', action='store_true', help='activate web stream')
     args = parser.parse_args()
 
     if args.rtsp:
