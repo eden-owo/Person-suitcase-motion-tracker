@@ -22,7 +22,7 @@ from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
 import threading
-from flask import Flask, Response 
+from flask import Flask, Response, stream_with_context
 
 app = Flask(__name__)
 
@@ -32,12 +32,31 @@ def index():
 
 @app.route('/video_feed')
 def video_feed():
-    return Response("這裡是影片串流內容")
+    return Response(stream_with_context(generate_stream()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    #return Response("這裡是影片串流內容")
 
 def start_flask():
     print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
     app.run(host='0.0.0.0', port=5000)
     
+def generate_stream():
+     
+    while True:
+        try:
+            if latest_frame is None:
+                time.sleep(0.01)
+                continue
+
+            ret, jpeg = cv2.imencode('.jpg', latest_frame)
+            if not ret:
+                continue
+            frame_bytes = jpeg.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        except Exception as e:
+            print(f"[Stream Error] {e}")
+            time.sleep(0.1)
 
 def is_jetson():
     return (
@@ -46,7 +65,7 @@ def is_jetson():
     )
 
 def run_local_video(args):
-    
+    global latest_frame
     if args.export:
         if not args.model.endswith(".pt"):  
             raise NotImplementedError
@@ -123,6 +142,7 @@ def run_local_video(args):
     flask_thread = threading.Thread(target=start_flask)
     flask_thread.daemon = True    
     flask_thread.start()
+    
     while True:
         ret, frame = video.read()
         if not ret:
@@ -144,7 +164,9 @@ def run_local_video(args):
 
         # if args.view:
         #     cv2.imshow("Segmented Image", output)       
-        
+        latest_frame = output
+            
+
         if out:            
             if output is not None and output.size > 0:    
                 out.write(output)
