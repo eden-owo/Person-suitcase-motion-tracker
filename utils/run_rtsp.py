@@ -23,25 +23,8 @@ from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
-from flask import Flask, Response 
-
 import queue 
 q = queue.Queue(maxsize=20)  # 定義 queue，最大容量可依需求調整
-
-app = Flask(__name__)
-
-@app.route('/')
-def index():
-    return "✅ Flask 正常運作"
-
-@app.route('/video_feed')
-def video_feed():
-    return Response("這裡是影片串流內容")
-
-def start_flask():
-    print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
-    app.run(host='0.0.0.0', port=5000)
-    
 
 def is_jetson():
     return (
@@ -144,14 +127,8 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
             total_frame += 1
             # print(f"Frame latency: {latency_ms:.2f} ms")
             print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f} | {type(model)}", end='\r')
-            # if args.view:
-            #     cv2.imshow("Segmented Image", output)
-            if args.web:
-                ret, buffer = cv2.imencode('.jpg', output)
-                output_bytes = buffer.tobytes()
-                
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + output_bytes + b'\r\n')
+            if args.view:
+                cv2.imshow("Segmented Image", output)
            
         if cv2.waitKey(1) & 0xFF == ord('q'): break
 
@@ -163,8 +140,7 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
     cv2.destroyAllWindows()
 
 
-def run_rtsp(args):    
- 
+def run_rtsp(args):
     if is_jetson():
         print("Jetson device detected.")
         gst_pipeline = (
@@ -215,23 +191,16 @@ def run_rtsp(args):
     p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size, video, gpu_resizer))
     p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height, resize_size))
     
-    
-    flask_thread = threading.Thread(target=start_flask)
-    flask_thread.daemon = True    
-    
     try: 
-
         if args.export:
-            p1.start()                     
-            p1.join() 
-            #flask_thread.start()
+            p1.start()      
+            p1.join()      
+
         else: 
             p1.start()   
             p2.start()
-            #flask_thread.start()
             p1.join()
             p2.join()
-
     except KeyboardInterrupt:
         print("\n⛔️ 手動中斷程式 (Ctrl+C)")
     finally:
