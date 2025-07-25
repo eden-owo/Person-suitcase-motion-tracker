@@ -26,6 +26,40 @@ from ultralytics.utils.checks import check_yaml
 import queue 
 q = queue.Queue(maxsize=20)  # 定義 queue，最大容量可依需求調整
 
+from flask import Flask, Response, stream_with_context
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "✅ Flask 正常運作"
+
+@app.route('/video_feed')
+def video_feed():
+    return Response(stream_with_context(generate_stream()),
+                    mimetype='multipart/x-mixed-replace; boundary=frame')
+    #return Response("這裡是影片串流內容")
+
+def start_flask():
+    print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
+    app.run(host='0.0.0.0', port=5000)
+    
+def generate_stream():     
+    while True:
+        try:
+            if latest_frame is None:
+                time.sleep(0.01)
+                continue
+
+            ret, jpeg = cv2.imencode('.jpg', latest_frame)
+            if not ret:
+                continue
+            frame_bytes = jpeg.tobytes()
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+        except Exception as e:
+            print(f"[Stream Error] {e}")
+            time.sleep(0.1)
+
 def is_jetson():
     return (
         platform.machine() == 'aarch64' and
@@ -61,6 +95,7 @@ def Receive(args, width, height, fps, resize_size, video, gpu_resizer):
        
 
 def Display(args, width, height, fps, M, max_width, max_height, resize_size):
+    global latest_frame
     if args.export:
         if not args.model.endswith(".pt"):  
             raise NotImplementedError
@@ -113,6 +148,12 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
     dummy_frame = np.zeros((resize_size[1], resize_size[0], 3), dtype=np.uint8)
     _ = process_frame(model, dummy_frame, M, max_width, max_height, colors,
                 track_history, track_time_history, track_box_history, allowed_classes)    
+                
+    if args.web:
+        flask_thread = threading.Thread(target=start_flask)
+        flask_thread.daemon = True    
+        flask_thread.start()
+    
     while True:
         if not q.empty():
             frame = q.get()
@@ -129,12 +170,13 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
             print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f} | {type(model)}", end='\r')
             if args.view:
                 cv2.imshow("Segmented Image", output)
+            if args.web:
+                latest_frame = output
            
-        if cv2.waitKey(1) & 0xFF == ord('q'): break
-
         if out:            
             if output is not None and output.size > 0:    
                 out.write(output)
+        if cv2.waitKey(1) & 0xFF == ord('q'): break
     
     if out: out.release()
     cv2.destroyAllWindows()

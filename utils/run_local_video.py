@@ -1,5 +1,6 @@
 # run_local_video.py
 
+import threading
 import argparse
 import sys
 sys.path.insert(0, '/home/eden/opencv/opencv-4.10.0/build_cuda/lib/python3')  # 根據你的實際路徑調整
@@ -21,9 +22,7 @@ from ultralytics.engine.results import Results
 from ultralytics.utils import ASSETS, YAML
 from ultralytics.utils.checks import check_yaml
 
-import threading
 from flask import Flask, Response, stream_with_context
-
 app = Flask(__name__)
 
 @app.route('/')
@@ -40,8 +39,7 @@ def start_flask():
     print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
     app.run(host='0.0.0.0', port=5000)
     
-def generate_stream():
-     
+def generate_stream():     
     while True:
         try:
             if latest_frame is None:
@@ -83,10 +81,8 @@ def run_local_video(args):
             model = YOLO(args.model)          
         elif args.model.endswith(".engine"):
             if is_jetson():
-                print("Jetson device detected.")
-                from utils.segmentor_trt import process_frame
-            else:
-                from utils.segmentor_trt import process_frame
+                print("Jetson device detected.")                       
+            from yolo.yolo_seg_trt import YOLOv8Seg_TRT
             from utils.segmentor_trt import process_frame
             model = YOLO(args.model)          
   
@@ -170,9 +166,7 @@ def run_local_video(args):
         if out:            
             if output is not None and output.size > 0:    
                 out.write(output)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        if cv2.waitKey(1) & 0xFF == ord('q'): break
 
     video.release()
     if out: out.release()
