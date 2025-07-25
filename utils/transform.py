@@ -58,10 +58,14 @@ class RP:
         self.selected_idx = None
 
         # Test
-        self.pts_src.append([187, 143])
-        self.pts_src.append([339, 143])
-        self.pts_src.append([431, 943])
-        self.pts_src.append([141, 943])
+        # self.pts_src.append([187, 143])
+        # self.pts_src.append([339, 143])
+        # self.pts_src.append([431, 943])
+        # self.pts_src.append([141, 943])
+        self.pts_src.append([735, 186])
+        self.pts_src.append([1076, 185])
+        self.pts_src.append([1151, 981])
+        self.pts_src.append([600, 991])      
 
         if self.pts_src == []:
 
