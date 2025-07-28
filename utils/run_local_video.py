@@ -68,8 +68,9 @@ def run_local_video(args):
         if not args.model.endswith(".pt"):  
             raise NotImplementedError
         pt_model = YOLO(args.model)        
-        pt_model.export(format="engine", int8=True, dynamic=True, half=False)
-        model = YOLO(args.model.replace(".pt",".engine"))  
+        pt_model.export(format="engine", int8=False, dynamic=True, half=True)
+        return
+
     else:
         if args.model.endswith(".pt") and args.export is not True:       
             from yolo.yolo_seg_onnx import YOLOv8Seg_onnx 
@@ -82,7 +83,6 @@ def run_local_video(args):
         elif args.model.endswith(".engine"):
             if is_jetson():
                 print("Jetson device detected.")                       
-            from yolo.yolo_seg_trt import YOLOv8Seg_TRT
             from utils.segmentor_trt import process_frame
             model = YOLO(args.model)          
   
@@ -159,7 +159,7 @@ def run_local_video(args):
         print(f"FPS: {FPS:.2f} | Avg FPS: {total_FPS / total_frame:.2f}", end='\r')
 
         # if args.view:
-        #     cv2.imshow("Segmented Image", output)       
+        #     cv2.imshow("Segmented Image", output)    
         latest_frame = output
             
 

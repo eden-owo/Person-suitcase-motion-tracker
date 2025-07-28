@@ -156,7 +156,7 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
     
     while True:
         if not q.empty():
-            frame = q.get()
+            frame = q.get_nowait()
             start_time = time.time()
             output = process_frame(model, frame, M, max_width, max_height, colors,
                         track_history, track_time_history, track_box_history, allowed_classes)
@@ -186,11 +186,11 @@ def run_rtsp(args):
     if is_jetson():
         print("Jetson device detected.")
         gst_pipeline = (
-            f"rtspsrc location={args.rtsp} latency=50 drop-on-latency=true ! "
-            f"rtph264depay ! h264parse ! nvv4l2decoder ! "
+            f"rtspsrc location={args.rtsp} latency=100 drop-on-latency=true ! "
+            f"rtph264depay ! h264parse ! nvv4l2decoder enable-max-performance=1 ! "
             f"nvvidconv ! video/x-raw(memory:NVMM),format=NV12 ! "
             f"nvvidconv ! video/x-raw,format=BGRx ! videoconvert ! "
-            f"video/x-raw,format=BGR ! appsink drop=true max-buffers=1 sync=false"
+            f"video/x-raw,format=BGR ! appsink drop=true max-buffers=4 sync=true"
         )
 
         video = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)

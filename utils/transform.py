@@ -62,10 +62,16 @@ class RP:
         # self.pts_src.append([339, 143])
         # self.pts_src.append([431, 943])
         # self.pts_src.append([141, 943])
-        self.pts_src.append([735, 186])
-        self.pts_src.append([1076, 185])
-        self.pts_src.append([1151, 981])
-        self.pts_src.append([600, 991])      
+        
+        self.pts_src.append([187, 543])
+        self.pts_src.append([539, 543])
+        self.pts_src.append([531, 1143])
+        self.pts_src.append([141, 1143])
+        
+        # self.pts_src.append([735, 386])
+        # self.pts_src.append([1076, 385])
+        # self.pts_src.append([1151, 981])
+        # self.pts_src.append([600, 991])      
 
         if self.pts_src == []:
 
