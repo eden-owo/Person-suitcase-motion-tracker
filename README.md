@@ -7,7 +7,7 @@ With calculating the velocity of people and suitcases, its primary goal is to de
 
 <figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/demo.png" alt=""><figcaption></figcaption></figure>
 
-TensorRT is recommended for up to 30% faster computation.
+TensorRT is recommended for at least 30% faster computation.
 
 | GPU | Model | With TensorRT (INT8) | Without TensorRT |
 |:--:|:--:|:--:|:--:|
@@ -15,6 +15,9 @@ TensorRT is recommended for up to 30% faster computation.
 | RTX 4060 Laptop | Yolo11m-seg | 48 FPS | 32 FPS |
 | Jetson orin nano super | Yolo11m-seg | 24 FPS | 12 FPS |
 
+Flask is applied for web visualization, rather than opencv-gtk in command-based case.
+
+<figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/suitcase-alarm.png" alt=""><figcaption></figcaption></figure>
 
 🧱 Architecture
 
