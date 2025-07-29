@@ -20,7 +20,7 @@ def process_frame(model, frame, transform_matrix, max_width, max_height, colors,
             hasattr(result.boxes, 'data') and
             hasattr(result, 'masks') and result.masks and
             hasattr(result, 'names') and result.names):
-        print("Missing boxes, masks, or names")
+        # print("Missing boxes, masks, or names")
         return frame_corrected.copy()
 
     boxes, masks, names = result.boxes, result.masks, result.names

@@ -133,6 +133,9 @@ def draw_box_tracks(img, box, label, color, track_id, track_history, track_time_
         cv2.putText(img, speed_text, (x1, min(img.shape[0] - 10, y2 + 20)), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)    
         cv2.rectangle(img, (x1, y1), (x2, y2), (0, 0, 255), 2)
 
+        cv2.putText(img, f'ALARM', (20, 80),
+        cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 4)
+
         # 判斷是否同一分鐘內已經丟過旗標
         current_minute = datetime.now().strftime('%Y-%m-%d %H:%M')
         if last_alarm_minute != current_minute:

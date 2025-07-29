@@ -29,15 +29,15 @@ app = Flask(__name__)
 def index():
     return "✅ Flask 正常運作"
 
-@app.route('/video_feed')
-def video_feed():
+@app.route('/fall')
+def fall():
     return Response(stream_with_context(generate_stream()),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
     #return Response("這裡是影片串流內容")
 
 def start_flask():
-    print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
-    app.run(host='0.0.0.0', port=5000)
+    print("🚀 Flask 開始運行在 http://0.0.0.0:5001/")
+    app.run(host='0.0.0.0', port=5001)
     
 def generate_stream():     
     while True:
