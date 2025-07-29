@@ -15,7 +15,7 @@ TensorRT is recommended for at least 30% faster computation.
 | RTX 4060 Laptop | Yolo11m-seg | 48 FPS | 32 FPS |
 | Jetson orin nano super | Yolo11m-seg | 24 FPS | 12 FPS |
 
-Flask is applied for web visualization, rather than opencv-gtk in command-based case.
+Flask is used for web-based visualization, as OpenCV’s GTK interface is not supported in headless environments like Docker or Kubernetes.
 
 <figure><img src="https://github.com/eden-owo/Person-suitcase-motion-tracker/blob/master/pics/suitcase-alarm.png" alt=""><figcaption></figcaption></figure>
 
