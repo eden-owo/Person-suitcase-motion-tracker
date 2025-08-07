@@ -38,15 +38,15 @@ from ultralytics.utils.checks import check_yaml
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--export", type=str, default=False, help="Export .pt to .engine")
-    parser.add_argument("--model", type=str, required=True, default="yolo11m-seg.pt", help="Path to ONNX model")
+    parser.add_argument("--export", action='store_true', help="Export .pt to .engine")
+    parser.add_argument("--model", type=str, required=True, default="yolo11m-seg.engine", help="Path to ONNX model")
     parser.add_argument("--source", type=str, default=str(ASSETS / "bus.jpg"), help="Path to input image")
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     parser.add_argument("--resize_ratio", type=float, default=1.0, help="Video resize ratio")
     parser.add_argument("--rtsp", type=str)
-    parser.add_argument("--record", type=str, default=False, help="Record video")
-    parser.add_argument("--view", type=str, default=False, help="View visualization")
+    parser.add_argument("--record", action='store_true', help="Record video")
+    parser.add_argument("--view", action='store_true', help="View visualization")
     parser.add_argument('--web', action='store_true', help='activate web stream')
     args = parser.parse_args()
 

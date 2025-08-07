@@ -1,0 +1,35 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: mrt-yo-flask
+  labels:
+    app: psmt-test    # 這裡加上 labels  
+spec:
+  hostNetwork: true
+  restartPolicy: Always
+  containers:
+  - name: psmt-container
+    image: mrt-yo-flask:latest
+    imagePullPolicy: Never
+    securityContext:
+      privileged: true
+    command: [ "/bin/bash", "-c"]
+    args: [ "cd /workspace && python MRT_YO_flask.py" ]
+    env:
+    - name: DISPLAY
+      value: ":0"
+    volumeMounts:
+    - name: test-volume
+      mountPath: /workspace
+    - name: x11-unix
+      mountPath: /tmp/.X11-unix
+  volumes:
+  - name: test-volume
+    hostPath:
+      path: /home/eden/Desktop/test
+      type: Directory
+  - name: x11-unix
+    hostPath:
+      path: /tmp/.X11-unix
+      type: Directory
+
