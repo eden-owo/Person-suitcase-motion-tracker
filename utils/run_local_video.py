@@ -37,8 +37,9 @@ def fall():
 
 def start_flask():
     print("🚀 Flask 開始運行在 http://0.0.0.0:5001/")
-    app.run(host='0.0.0.0', port=5001, ssl_context=('192.168.1.22.pem', '192.168.1.22-key.pem'))
-    
+    #app.run(host='0.0.0.0', port=5001, ssl_context=('192.168.1.22.pem', '192.168.1.22-key.pem'))
+    app.run(host='0.0.0.0', port=5001)
+
 def generate_stream():     
     while True:
         try:
