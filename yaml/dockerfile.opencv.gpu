@@ -1,0 +1,64 @@
+# ===== Base: CUDA 12.9 + cuDNN (devel, 22.04) =====
+FROM nvidia/cuda:11.8.0-cudnn8-devel-ubuntu22.04
+
+# 基本工具與 Python
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 python3-pip python3-dev python3-venv \
+    git wget ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# OpenCV build 依賴
+RUN apt-get update && apt-get install -y \
+    build-essential cmake pkg-config \
+    libgtk-3-dev libavcodec-dev libavformat-dev libswscale-dev \
+    libtbb2 libtbb-dev libjpeg-dev libpng-dev libtiff-dev libdc1394-dev \
+    libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+    python3-dev curl unzip gfortran dos2unix \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install --upgrade "numpy>=2.0"
+
+# 複製並編譯 OpenCV 
+COPY build_opencv.sh /opt/build_opencv.sh
+RUN chmod +x /opt/build_opencv.sh 
+RUN dos2unix /opt/build_opencv.sh
+RUN /opt/build_opencv.sh
+
+# 驗證 OpenCV
+RUN python3 - <<'PY'
+import cv2
+import numpy
+print("OpenCV:", cv2.__version__)
+print("NumPy:", numpy.__version__)
+print("cv2 path:", cv2.__file__)
+print("--- CUDA flags in build info ---")
+
+for l in cv2.getBuildInformation().splitlines():
+    if any(k in l for k in ["CUDA", "cuDNN", "GStreamer"]):
+        print(l)
+PY
+
+# 安裝 ultralytics + 常用套件
+RUN pip3 install --upgrade pip \
+ && pip3 install ultralytics flask pycuda
+
+# （可選）驗證 torch 是否可用 GPU
+RUN python3 - <<'PY'
+import torch
+print("torch:", torch.__version__)
+print("torch.cuda.is_available:", torch.cuda.is_available())
+print("torch.version.cuda:", torch.version.cuda)
+PY
+
+# 目錄與測試素材
+WORKDIR /workspace/Person-suitcase-motion-tracker
+RUN mkdir -p test && \
+    wget --no-check-certificate \
+      "https://drive.usercontent.google.com/u/0/uc?id=1ZvLmuqDCW87ZuU258WxvVgd7y7-0Jp8k&export=download" \
+      -O test/suitcase3.mp4
+
+RUN pip3 uninstall -y opencv-python opencv-contrib-python opencv-python-headless && \
+    make -C /opt/opencv/build install && ldconfig && \
+    pip3 install --no-cache-dir "onnxruntime-gpu>=1.19.0"
+    
+WORKDIR /workspace/Person-suitcase-motion-tracker

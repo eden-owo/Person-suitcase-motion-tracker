@@ -3,33 +3,28 @@ kind: Pod
 metadata:
   name: mrt-yo-flask
   labels:
-    app: psmt-test    # 這裡加上 labels  
+    app: psmt-test
 spec:
   hostNetwork: true
   restartPolicy: Always
   containers:
   - name: psmt-container
-    image: mrt-yo-flask:latest
+    image: edenouob/mrt-yo-flask:20250807
     imagePullPolicy: Never
     securityContext:
       privileged: true
-    command: [ "/bin/bash", "-c"]
-    args: [ "cd /workspace && python MRT_YO_flask.py" ]
-    env:
-    - name: DISPLAY
-      value: ":0"
+    command: ["/bin/bash", "-lc"]
+    args:
+      - >
+        set -e;
+        mkdir -p /workspace/Person-suitcase-motion-tracker &&
+        echo "waiting for /workspace/Person-suitcase-motion-tracker/main.py ..." &&
+        while [ ! -f /workspace/Person-suitcase-motion-tracker/main.py ]; do sleep 1; done &&
+        cd /workspace/Person-suitcase-motion-tracker &&
+        python main.py --model /model/yolo11m-seg.pt
     volumeMounts:
-    - name: test-volume
+    - name: app-workspace
       mountPath: /workspace
-    - name: x11-unix
-      mountPath: /tmp/.X11-unix
   volumes:
-  - name: test-volume
-    hostPath:
-      path: /home/eden/Desktop/test
-      type: Directory
-  - name: x11-unix
-    hostPath:
-      path: /tmp/.X11-unix
-      type: Directory
-
+  - name: app-workspace
+    emptyDir: {}

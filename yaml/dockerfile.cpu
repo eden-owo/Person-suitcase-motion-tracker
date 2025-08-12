@@ -1,0 +1,15 @@
+FROM ultralytics/ultralytics:latest
+
+# 安裝 ffmpeg 與常用 GStreamer 插件（非 Jetson 版）
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ffmpeg \
+    gstreamer1.0-plugins-base gstreamer1.0-plugins-good gstreamer1.0-libav \
+    && rm -rf /var/lib/apt/lists/*
+
+# 驗證 OpenCV（pip 的 CPU 版）
+RUN python -c "import cv2; print('cv2:', cv2.__file__); print('OpenCV:', cv2.__version__)"
+
+# 預設埠（若用 Flask）
+EXPOSE 5000
+
+RUN pip install flask

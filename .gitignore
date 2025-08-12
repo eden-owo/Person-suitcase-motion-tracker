@@ -2,8 +2,6 @@ model
 test
 192.168.1.22.pem
 192.168.1.22-key.pem
-yaml/
-yaml
 yolo11m-pose.pt
 __pycache__/
 *.log
