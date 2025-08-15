@@ -9,4 +9,3 @@ alarm/*.txt
 *.pt
 *.onnx
 *.engine
-MRT_YO_flask.py

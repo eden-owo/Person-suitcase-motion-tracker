@@ -44,10 +44,11 @@ if __name__ == "__main__":
     parser.add_argument("--conf", type=float, default=0.3, help="Confidence threshold")
     parser.add_argument("--iou", type=float, default=0.7, help="NMS IoU threshold")
     parser.add_argument("--resize_ratio", type=float, default=1.0, help="Video resize ratio")
-    parser.add_argument("--rtsp", type=str)
+    parser.add_argument("--rtsp", action='store_true', help="Use RTSP URL (use --rtsp-file to load from file)")
     parser.add_argument("--record", action='store_true', help="Record video")
     parser.add_argument("--view", action='store_true', help="View visualization")
     parser.add_argument('--web', action='store_true', help='activate web stream')
+    parser.add_argument("--rtsp-file", type=str, default='/workspace/Person-suitcase-motion-tracker/rtsp.txt', help="Path to a text file containing an RTSP URL")
     args = parser.parse_args()
 
     if args.rtsp:

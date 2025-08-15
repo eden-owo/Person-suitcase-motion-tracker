@@ -12,6 +12,7 @@ import os
 from collections import defaultdict
 import platform
 import numpy as np
+from pathlib import Path
  
 from utils.transform import RP
 from utils.visualize import draw_box_and_mask
@@ -181,12 +182,15 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
     if out: out.release()
     cv2.destroyAllWindows()
 
-
 def run_rtsp(args):
+    RTSP_FILE = os.getenv("RTSP_FILE") or args.rtsp_file or "/workspace/Person-suitcase-motion-tracker/rtsp.txt"
+    with open(RTSP_FILE, "r", encoding="utf-8") as f:
+        RTSP = f.read().strip()
+
     if is_jetson():
         print("Jetson device detected.")
         gst_pipeline = (
-            f"rtspsrc location={args.rtsp} latency=100 drop-on-latency=true ! "
+            f"rtspsrc location={RTSP} latency=100 drop-on-latency=true ! "
             f"rtph264depay ! h264parse ! nvv4l2decoder enable-max-performance=1 ! "
             f"nvvidconv ! video/x-raw(memory:NVMM),format=NV12 ! "
             f"nvvidconv ! video/x-raw,format=BGRx ! videoconvert ! "
@@ -195,9 +199,9 @@ def run_rtsp(args):
 
         video = cv2.VideoCapture(gst_pipeline, cv2.CAP_GSTREAMER)
         if not video.isOpened():
-            raise RuntimeError(f"Failed to open video stream: {args.rtsp}")
+            raise RuntimeError(f"Failed to open video stream: {RTSP}")
     else:
-        video = cv2.VideoCapture(args.rtsp)
+        video = cv2.VideoCapture(RTSP)
 
     width, height, fps = get_video_properties(video)
 
