@@ -22,22 +22,22 @@ Flask is used for web-based visualization, as OpenCV’s GTK interface is not su
 🧱 Architecture
 
 
-專案結構如下，說明各模組功能與用途：
+The project structure is as follows, with a description of each module's functionality and purpose:
 
 
 ```text
 project/
 │
-├── main.py                # 主程式入口點，負責參數解析與整體流程控制
-├── photo_PR_example.py    # 單張影像進行幾何變形的範例程式
+├── main.py                # Main entry point of the program, responsible for argument parsing and overall flow control
+├── photo_PR_example.py    # Example script for performing geometric transformations on a single image
 │
-├── utils/                 # 實用工具模組
-│   ├── segmentor.py       # 使用已載入的 YOLO 模型對輸入影像進行透視矯正後的即時實例分割（Instance Segmentation）。
-│   ├── transform.py       # 提供 ROI 選取與透視變換（perspective transform）功能
-│   ├── video_utils.py     # 影片讀取、儲存與 GPU 加速處理
-│   └── visualize.py       # 負責繪製 bounding boxes 與 segmentation masks
+├── utils/                 # Utility modules
+│   ├── segmentor.py       # Performs real-time instance segmentation using a preloaded YOLO model after applying perspective correction
+│   ├── transform.py       # Provides ROI selection and perspective transformation functions
+│   ├── video_utils.py     # Handles video reading, saving, and GPU-accelerated processing
+│   └── visualize.py       # Renders bounding boxes and segmentation masks
 │
 └── yolo/
-    └── yolo_seg.py        # YOLOv8 Segmentation 模型的封裝與推論邏輯
+    └── yolo_seg.py        # Encapsulation and inference logic for the YOLOv8 Segmentation model
 
 ```
