@@ -1,0 +1,1 @@
+rtsp://admin:Pass1234@192.168.1.16:554/stream0

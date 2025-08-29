@@ -12,9 +12,10 @@ import torch
 import torch.nn.functional as F
 
 class RP:
-    def __init__(self):
+    def __init__(self, transform: bool):
+        self.use_transform = transform
         self.pts_src = []
-        self.selected_idx = None
+        self.selected_idx = None      
 
     def mouse_callback(self, event, x, y, flags, param=None):
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -56,22 +57,31 @@ class RP:
         clone = img.copy()
         self.pts_src = []
         self.selected_idx = None
-
-        # Test
-        # self.pts_src.append([187, 143])
-        # self.pts_src.append([339, 143])
-        # self.pts_src.append([431, 943])
-        # self.pts_src.append([141, 943])
-        
-        # self.pts_src.append([187, 543])
-        # self.pts_src.append([539, 543])
-        # self.pts_src.append([531, 1143])
-        # self.pts_src.append([141, 1143])
-        
-        self.pts_src.append([735, 386])
-        self.pts_src.append([1076, 385])
-        self.pts_src.append([1151, 981])
-        self.pts_src.append([600, 991])      
+        h, w = img.shape[:2]
+        if self.use_transform:
+            # Test
+            # self.pts_src.append([187, 143])
+            # self.pts_src.append([339, 143])
+            # self.pts_src.append([431, 943])
+            # self.pts_src.append([141, 943])
+            
+            # self.pts_src.append([187, 543])
+            # self.pts_src.append([539, 543])
+            # self.pts_src.append([531, 1143])
+            # self.pts_src.append([141, 1143])
+            
+            self.pts_src.append([735, 386])
+            self.pts_src.append([1076, 385])
+            self.pts_src.append([1151, 981])
+            self.pts_src.append([600, 991])      
+        else:
+            # 影像四個角：左上、右上、右下、左下
+            self.pts_src = [
+                [0,     0],
+                [w - 1, 0],
+                [w - 1, h - 1],
+                [0,     h - 1],
+            ]
 
         if self.pts_src == []:
 

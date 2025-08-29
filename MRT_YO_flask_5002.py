@@ -42,9 +42,9 @@ def pose():
     # return Response("這裡是影片串流內容", mimetype='text/plain')
     
 def start_flask():
-    print("🚀 Flask 開始運行在 http://0.0.0.0:5000/")
+    print("🚀 Flask 開始運行在 http://0.0.0.0:5002/")
     # app.run(host='0.0.0.0', port=5000, ssl_context=('192.168.1.22.pem', '192.168.1.22-key.pem'))
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5002)
     
 def generate_stream():     
     while True:
@@ -82,7 +82,7 @@ video_path_14 = r'E:\otoTim\MRTpose\testvideo\TPE_0606_2.mp4'
 video_path_15 = r'E:\otoTim\MRTpose\testvideo\FB_0609.mp4'
 
 # RTSP = r'rtsp://admin:Pass1234@192.168.1.102:554/stream0'
-RTSP_FILE = os.getenv("RTSP_FILE", "/workspace/Person-suitcase-motion-tracker/rtsp_cam1.txt")  # 可用環境變數覆蓋路徑
+RTSP_FILE = os.getenv("RTSP_FILE", "/workspace/Person-suitcase-motion-tracker/rtsp_cam2.txt")  # 可用環境變數覆蓋路徑
 with open(RTSP_FILE, "r", encoding="utf-8") as f:
     RTSP = f.read().strip()
 

@@ -49,6 +49,8 @@ if __name__ == "__main__":
     parser.add_argument("--view", action='store_true', help="View visualization")
     parser.add_argument('--web', action='store_true', help='activate web stream')
     parser.add_argument("--rtsp-file", type=str, default='/workspace/Person-suitcase-motion-tracker/rtsp.txt', help="Path to a text file containing an RTSP URL")
+    parser.add_argument("--port", type=int, default=5001, help="Output web stream port")
+    parser.add_argument("--transform", action="store_true", help="Use preset ROI points; otherwise use image corners")
     args = parser.parse_args()
 
     if args.rtsp:

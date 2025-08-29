@@ -40,9 +40,9 @@ def fall():
                     mimetype='multipart/x-mixed-replace; boundary=frame')
     #return Response("這裡是影片串流內容")
 
-def start_flask():
+def start_flask(port_args):
     print("🚀 Flask 開始運行在 http://0.0.0.0:5001/")
-    app.run(host='0.0.0.0', port=5001)
+    app.run(host='0.0.0.0', port=port_args)
     
 def generate_stream():     
     while True:
@@ -151,7 +151,7 @@ def Display(args, width, height, fps, M, max_width, max_height, resize_size):
                 track_history, track_time_history, track_box_history, allowed_classes)    
                 
     if args.web:
-        flask_thread = threading.Thread(target=start_flask)
+        flask_thread = threading.Thread(target=start_flask, args=(args.port,))
         flask_thread.daemon = True    
         flask_thread.start()
     
@@ -232,7 +232,7 @@ def run_rtsp(args):
     # 使用者選點並取得矯正圖與原始四點
     # M = RP.photo_PR_roi(frame_resized)
     ## 建立已封裝物件
-    M, max_width, max_height = RP().photo_PR_roi(frame_resized)
+    M, max_width, max_height = RP(args.transform).photo_PR_roi(frame_resized)
     
     p1 = threading.Thread(target=Receive, args=(args, width, height, fps, resize_size, video, gpu_resizer))
     p2 = threading.Thread(target=Display, args=(args, width, height, fps, M, max_width, max_height, resize_size))
